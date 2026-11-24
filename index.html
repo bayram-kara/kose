@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Köşe · Boks Antrenörü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#c8102e">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+/* VOICE: köşedeki antrenör — kısa, net, cesaretlendiren
+   IDEA: ringin kırmızı köşesi; karşında lapacı ya da rakip, yanında antrenör
+   PICTURE: 3B ring ve figür; antrenmanda TV'ye yakışan gece salonu
+   COLOUR/TYPE: kırmızı köşe + beyaz minder; mavi rakip. Oswald + Inter
+   LAYOUT: Serbest önde; mod kartları, kurucu, ısınma seçimi; tam ekran antrenman */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121316);--panel:light-dark(#f2f3f5,#1c1e23);--panel2:light-dark(#e8eaee,#262931);--line:light-dark(#e1e3e8,#2c2f36);--ink:light-dark(#151515,#f2f2f3);--mute:light-dark(#5d6370,#9aa1ad);--red:#c8102e;--redd:#9c0c24;--blue:#2f6fd6;--ok:light-dark(#1d7a4c,#46c085)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Oswald,Impact,sans-serif;font-weight:600;line-height:1.05;margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+input[type=text]{font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;min-height:48px}
+.top{background:var(--red);color:#fff;display:flex;align-items:center;gap:12px;padding:12px max(4vw,16px);flex-wrap:wrap;padding-top:max(12px,env(safe-area-inset-top))}
+.brand{font:700 26px Oswald;letter-spacing:1px}.brand span{font:600 12px Inter;opacity:.75;vertical-align:middle;letter-spacing:0}
+.tabs{margin-left:auto;display:flex;gap:4px;background:#0003;padding:4px;border-radius:12px}
+.tabs button{padding:9px 12px;border-radius:9px;min-height:44px;font-weight:600;color:#fff;opacity:.85}
+.tabs button[aria-selected=true]{background:#fff;color:var(--red);opacity:1}
+.smx{display:none}@media(max-width:600px){.lgx{display:none}.smx{display:inline}}
+.hero{background:var(--red);color:#fff;padding:6px max(4vw,16px) clamp(24px,4vw,44px)}
+.hin{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(16px,4vw,48px);align-items:center}
+.kick{font-weight:600;font-size:14px;opacity:.9}
+.big{font-size:clamp(36px,5.6vw,56px)}
+.hero p{margin:10px 0 18px;font-size:17px;opacity:.95;max-width:34em}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 20px}.tag{background:#ffffff26;border-radius:999px;padding:5px 12px;font-size:14px;font-weight:600}
+.go{background:#fff;color:var(--red);font:600 22px Oswald;letter-spacing:.5px;padding:14px 30px;border-radius:14px;min-height:56px;box-shadow:0 6px 0 var(--redd)}
+.go:active{transform:translateY(3px);box-shadow:0 3px 0 var(--redd)}
+.go2{background:#0000;color:#fff;border:2px solid #ffffffa0;font:600 18px Oswald;padding:12px 20px;border-radius:14px;min-height:56px}
+.st3{position:relative;overflow:hidden;color:#151515}
+.ring{background:linear-gradient(#ffffff,#efe9e2);border-radius:22px;aspect-ratio:4/5;box-shadow:0 18px 40px #0004}
+.vbar{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;z-index:2}
+.vbar button{background:#ffffffd9;color:#151515;font-size:13px;font-weight:600;padding:6px 10px;border-radius:999px;min-height:34px;box-shadow:0 1px 4px #0002}
+.vbar button[aria-pressed=true]{background:#151515;color:#fff}
+.vbar.off{display:none}
+.hint3{position:absolute;top:10px;right:12px;font-size:12px;color:#6b6f78;z-index:2;pointer-events:none}
+.ld{position:absolute;inset:0;display:grid;place-items:center;font-weight:600;color:#6b6f78;z-index:1;pointer-events:none;text-align:center;padding:20px}
+main{max-width:1140px;margin:0 auto;padding:clamp(22px,3vw,40px) max(4vw,16px) 80px}
+.view[hidden]{display:none}
+h2.sec{font-size:26px;margin:0 0 6px}.secd{color:var(--mute);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:36px}
+.mc{background:var(--panel);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;border:2px solid transparent}
+.mc.last{border-color:var(--red)}
+.mc h3{font-size:22px}.mc .k{font-size:13px;font-weight:600;color:var(--red)}.mc .sm{font-size:14px;color:var(--mute)}
+.mc .row{margin-top:auto}
+.mc.new{align-items:center;justify-content:center;min-height:150px;border:2px dashed var(--line);background:none;font:600 20px Oswald;color:var(--mute)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--red);color:#fff;font:600 18px Oswald;padding:10px 20px;border-radius:12px;min-height:46px}
+.btn.g{background:var(--panel2);color:var(--ink)}.btn.s{font-size:16px;padding:8px 14px;min-height:42px}
+.wcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:36px}
+.wc{background:var(--panel);border-radius:14px;padding:14px;text-align:left;display:grid;gap:2px;min-height:44px}
+.wc b{font:600 19px Oswald}.wc span{font-size:14px;color:var(--mute)}.wc i{font-style:normal;color:var(--red);font-weight:600;font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 30px}
+.stat{background:var(--panel);border-radius:14px;padding:12px 16px;min-width:110px;flex:1}
+.stat b{display:block;font:600 28px/1.1 Oswald;color:var(--red)}.stat span{font-size:13px;color:var(--mute)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:9px 14px;border-radius:999px;background:var(--panel);font-weight:600;min-height:44px}
+.chip[aria-pressed=true]{background:var(--red);color:#fff}
+.chip .n{color:var(--red);margin-right:4px}.chip[aria-pressed=true] .n{color:#fff}
+.grp{width:100%;font-size:13px;color:var(--mute);margin-top:8px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(18px,3vw,40px);align-items:start}
+.lfig{background:linear-gradient(#ffffff,#efe9e2);border-radius:20px;aspect-ratio:4/5}
+@media(min-width:761px){.stick{position:sticky;top:16px}}
+.lk{color:var(--red);font-weight:600;font-size:14px}
+.seg{display:flex;flex-wrap:wrap;background:var(--panel);border-radius:12px;padding:3px;gap:2px}
+.seg button{padding:8px 12px;border-radius:9px;min-height:42px;font-weight:600;color:var(--mute);flex:1 1 auto}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px #0002}
+.steps{padding-left:22px;margin:14px 0 18px}.steps li{margin-bottom:7px}
+.err{border-left:4px solid var(--red);padding:3px 0 3px 12px;margin:0 0 8px}
+.flow{list-style:none;padding:0;margin:0 0 30px}
+.flow li{display:grid;grid-template-columns:4em minmax(0,1fr) auto;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.flow .tm{font:600 18px Oswald;color:var(--red)}.flow small{display:block;color:var(--mute);font-size:14px}.flow .du{color:var(--mute);white-space:nowrap}
+.wkl{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:28px}
+.wk{background:var(--panel);border-radius:14px;padding:14px}.wk b{font:600 19px Oswald}.wk p{margin:2px 0 10px;font-size:14px;color:var(--mute);min-height:2.8em}
+.days{display:flex;gap:6px}.day{flex:1;min-height:44px;border-radius:10px;border:2px solid var(--line);font-weight:600;font-size:14px}
+.day.done{background:var(--ok);border-color:var(--ok);color:#fff}.day.next{border-color:var(--red);color:var(--red)}
+.cseq{display:flex;gap:6px;flex-wrap:wrap;min-height:64px;align-items:center;background:var(--panel);border-radius:14px;padding:10px;margin:10px 0}
+.cseq:empty::before{content:"Aşağıdan hareketlere dokunarak kombinasyonunu kur";color:var(--mute);font-size:15px;padding:0 6px}
+.ct{font:600 22px Oswald;padding:4px 12px;border-radius:10px;background:var(--red);color:#fff;min-height:44px}
+.ct.d{background:var(--blue)}.ct.f{background:#5d6370}.ct small{display:block;font:600 11px Inter;opacity:.85}
+.kp{display:grid;gap:8px;margin:6px 0 14px}.kp .grp{margin:0}
+.kp .keys{display:flex;flex-wrap:wrap;gap:6px}
+.key{background:var(--panel);border-radius:12px;padding:8px 12px;min-height:48px;font-weight:600;text-align:left;line-height:1.15}
+.key b{font:600 20px Oswald;margin-right:4px;color:var(--red)}.key.d b{color:var(--blue)}
+.mylist{list-style:none;padding:0;margin:0 0 30px}
+.mylist li{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.mylist .cs{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.mylist .cs span{font:600 15px Oswald;background:var(--panel);border-radius:8px;padding:2px 8px}
+.empty{color:var(--mute);padding:14px 0}
+details{background:var(--panel);border-radius:14px;padding:12px 16px;margin-bottom:10px}summary{font-weight:600;cursor:pointer;min-height:28px}
+.note{font-size:13px;color:var(--mute);margin-top:12px}
+/* panel (mod kurucu, ısınma seçimi) */
+.sheet{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sb{background:var(--bg);width:100%;max-width:760px;max-height:94vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px max(4vw,18px) calc(20px + env(safe-area-inset-bottom))}
+@media(min-width:800px){.sheet{align-items:center}.sb{border-radius:22px}}
+.sb h2{font-size:30px;margin-bottom:12px}
+.fld{margin:16px 0}.fld>label,.fld>.lb{display:block;font-weight:600;margin-bottom:6px}.fld .hlp{font-size:13px;color:var(--mute);margin-top:6px}
+.stp{display:flex;align-items:center;gap:10px}.stp button{width:48px;height:48px;border-radius:12px;background:var(--panel);font-size:24px;font-weight:600}.stp b{font:600 26px Oswald;min-width:3.2em;text-align:center}
+.tg{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.tg span{font-weight:600}.tg small{display:block;font-weight:400;color:var(--mute);font-size:13px}
+.sw{width:56px;height:32px;border-radius:999px;background:var(--panel2);position:relative;flex:none}.sw::after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0004;transition:left .15s}
+.sw[aria-checked=true]{background:var(--red)}.sw[aria-checked=true]::after{left:28px}
+.sum{position:sticky;bottom:-20px;background:var(--bg);padding:14px 0 4px;border-top:1px solid var(--line);margin-top:10px}
+.sum p{margin:0 0 10px;font-weight:600}
+.wopt{display:grid;gap:8px;margin:12px 0}
+.wo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;text-align:left;background:var(--panel);border-radius:14px;padding:12px 14px;border:2px solid transparent;min-height:44px}
+.wo[aria-pressed=true]{border-color:var(--red)}.wo b{font:600 19px Oswald}.wo span{grid-column:1;font-size:14px;color:var(--mute)}.wo i{font-style:normal;color:var(--mute);grid-row:1;grid-column:2;align-self:center}
+.wo em{font-style:normal;color:#fff;background:var(--ok);border-radius:999px;font-size:12px;padding:1px 8px;margin-left:6px;vertical-align:middle;font-family:Inter}
+/* antrenman ekranı */
+#run{position:fixed;inset:0;z-index:30;background:#0e0f12;color:#f4f4f5;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+#run[hidden],#end[hidden]{display:none}
+.rt{display:flex;align-items:center;gap:10px;padding:10px max(3vw,14px)}
+.rt .lbl{flex:1;font-size:14px;color:#a9adb7}.rt .lbl b{display:block;font:600 22px Oswald;color:#fff}
+.x{width:44px;height:44px;border-radius:12px;background:#ffffff14;font-size:22px;font-weight:600}
+.dots{display:flex;gap:4px;padding:0 max(3vw,14px)}.dots i{flex:1;height:5px;border-radius:3px;background:#ffffff1c}.dots i.d{background:#ffffff66}.dots i.c{background:var(--red)}
+.rb{flex:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(12px,3vw,32px);padding:12px max(3vw,14px);align-items:center;max-width:1240px;width:100%;margin:0 auto;min-height:0}
+.rfig{background:radial-gradient(circle at 50% 30%,#3a3e47,#16181c 75%);border-radius:22px;aspect-ratio:4/5;max-height:64vh;justify-self:center;width:100%;max-width:500px;color:#9aa0aa}
+.rfig .hint3{color:#9aa0aa}
+.state{font-weight:600;color:var(--red);font-size:15px;min-height:1.5em}
+.clock{font:600 clamp(64px,12vw,128px)/1 Oswald;font-variant-numeric:tabular-nums}
+.rest .clock,.rest .state{color:#7fb0ff}
+.call{display:flex;gap:8px;flex-wrap:wrap;min-height:70px;margin:12px 0 8px;align-items:center}
+.tok{font:600 clamp(26px,4.4vw,40px)/1.1 Oswald;padding:6px 16px;border-radius:14px;background:var(--red);color:#fff;animation:pop .22s ease-out}
+.tok.d{background:var(--blue)}.tok.f{background:#5d6370}.tok small{display:block;font:600 12px Inter;opacity:.85}
+.cd{font:700 clamp(90px,16vw,170px)/1 Oswald;color:var(--red);animation:pop .3s ease-out}
+@keyframes pop{from{transform:scale(.75);opacity:0}}
+.cap{font-size:clamp(17px,2vw,21px);line-height:1.4;min-height:3em;color:#e6e7ea;border-left:3px solid var(--red);padding-left:12px}
+.cap span{display:block;font-size:12px;color:#8d929c;margin-bottom:2px}
+.cnt{font-size:14px;color:#a9adb7;margin-top:8px;min-height:1.4em}
+.rc{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:10px max(3vw,14px) max(14px,env(safe-area-inset-bottom))}
+.rc button{min-height:50px;padding:10px 16px;border-radius:14px;background:#ffffff14;font-weight:600}
+.rc .main{background:#fff;color:#111;min-width:120px}.rc .on{background:var(--blue);color:#fff}
+.hud{position:absolute;inset:0;pointer-events:none;z-index:3}
+.dhint{position:absolute;left:50%;top:14%;transform:translateX(-50%);font:700 clamp(34px,7vw,84px)/1 Oswald;color:#fff;background:#c8102ee6;padding:8px 22px;border-radius:16px;opacity:0;transition:opacity .12s;white-space:nowrap}
+.dhint.on{opacity:1}.dhint.ctr{background:#2f6fd6e6}
+.edge{position:absolute;top:0;bottom:0;width:18%;opacity:0;transition:opacity .15s}
+.edge.l{left:0;background:linear-gradient(90deg,#c8102ecc,#0000)}.edge.r{right:0;background:linear-gradient(-90deg,#c8102ecc,#0000)}.edge.on{opacity:1}
+/* TV / yatay düzen: sahne tüm ekranı kaplar, her şey üstüne biner */
+#run.tv .rb{position:absolute;inset:0;max-width:none;padding:0;display:block;margin:0}
+#run.tv .rfig{position:absolute;inset:0;max-width:none;max-height:none;border-radius:0;aspect-ratio:auto;width:100%;height:100%}
+#run.tv .rt{position:absolute;top:0;left:0;right:0;z-index:6;padding:max(6px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 6px max(12px,env(safe-area-inset-left));background:linear-gradient(#000b,#0000)}
+#run.tv .rt .lbl span{display:none}#run.tv .rt .lbl b{font-size:clamp(15px,2.6vh,22px)}
+#run.tv .rt .x{width:38px;height:38px;font-size:18px}
+#run.tv .dots{position:absolute;top:0;left:0;right:0;z-index:7;padding:0;gap:2px}#run.tv .dots i{height:3px;border-radius:0}
+#run.tv .info{position:absolute;left:max(14px,env(safe-area-inset-left),3vw);top:clamp(46px,9vh,90px);z-index:4;max-width:40vw;text-shadow:0 2px 12px #000c}
+#run.tv .state{font-size:clamp(12px,2.2vh,18px);min-height:0}
+#run.tv .clock{font-size:clamp(44px,15vh,140px)}
+#run.tv .cnt{font-size:clamp(11px,2vh,16px);margin-top:4px}
+#run.tv .call{position:fixed;right:max(14px,env(safe-area-inset-right),3vw);top:clamp(46px,9vh,90px);justify-content:flex-end;z-index:4;max-width:46vw;margin:0;min-height:0}
+#run.tv .tok{font-size:clamp(22px,8vh,72px);padding:.6vh 2vh;box-shadow:0 8px 30px #0008}
+#run.tv .tok small{font-size:clamp(9px,1.5vh,13px)}
+#run.tv .cap{position:fixed;left:max(14px,env(safe-area-inset-left),3vw);bottom:clamp(54px,11vh,96px);max-width:56vw;font-size:clamp(13px,2.6vh,22px);background:#0009;padding:6px 12px;border-radius:10px;z-index:4;min-height:0}
+#run.tv .cap span{display:none}
+#run.tv .cd{font-size:clamp(70px,24vh,200px)}
+#run.tv .dhint{top:auto;bottom:clamp(70px,20vh,180px);font-size:clamp(26px,9vh,84px)}
+#run.tv .rc{position:absolute;bottom:0;left:0;right:0;z-index:6;padding:6px max(12px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));gap:6px;background:linear-gradient(#0000,#000b);opacity:.55;transition:opacity .2s}
+#run.tv .rc:hover,#run.tv .rc:focus-within,#run.tv .rc:active{opacity:1}
+#run.tv .rc button{min-height:38px;padding:6px 12px;font-size:14px;border-radius:10px}
+#run.tv .rc .main{min-width:96px}
+#run.tv .vbar{bottom:clamp(54px,11vh,96px);left:auto;right:12px;justify-content:flex-end}
+#run.tv .hint3{display:none!important}#run.tv .vbar button{font-size:12px;padding:4px 9px;min-height:30px}
+#end{position:fixed;inset:0;z-index:40;background:#000b;display:grid;place-items:center;padding:16px}
+.eb{background:var(--bg);border-radius:22px;padding:26px;max-width:440px;width:100%;text-align:center}
+.eb .seg{margin:8px 0 14px}.eb p{margin:6px 0}
+.gear{width:44px;height:44px;border-radius:12px;background:#0003;color:#fff;display:grid;place-items:center;margin-left:4px}
+.sh3{font-size:22px;margin:22px 0 4px;padding-top:14px;border-top:1px solid var(--line)}.sh3:first-of-type{border-top:0;padding-top:0;margin-top:8px}
+input[type=range]{width:100%;accent-color:var(--red);height:32px}output{font-weight:400;color:var(--mute);margin-left:6px}
+textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
+.lb small,.fld label small{font-weight:400;color:var(--mute);margin-left:6px;font-size:13px}
+.eb{max-width:560px;max-height:94vh;overflow:auto;text-align:left}.eb h2,.eb #e-sub{text-align:center}.eb .fld{margin:12px 0}
+.seg.rs{flex-wrap:nowrap}.seg.rs button{padding:8px 0;min-width:0;flex:1 1 0;min-height:40px}
+.scb{background:var(--panel);border-radius:14px;padding:14px 16px;display:grid;gap:8px;margin-top:8px}
+.sct{display:flex;align-items:center;gap:10px}.sct b{font:600 48px/1 Oswald;color:var(--red)}.sct span{font-size:13px;color:var(--mute);line-height:1.3}
+.scr{display:grid;grid-template-columns:9.5em minmax(0,1fr) 3.4em;gap:10px;align-items:center;font-size:14px}
+.scbar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}.scbar i{display:block;height:100%;background:var(--red);border-radius:0 4px 4px 0}
+.scv{text-align:right;font-variant-numeric:tabular-nums;color:var(--mute)}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:14px}
+.card2{background:var(--panel);border-radius:16px;padding:16px 16px 12px}.card2 h3{font-size:21px}.cs{margin:2px 0 8px;font-size:13px;color:var(--mute)}
+.fig{position:relative;height:210px}.fig svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ax{font:12px Inter;fill:var(--mute)}.lv{font:600 13px Inter;fill:var(--ink)}
+.note2{font-size:14px;color:var(--mute);margin:8px 0}.note2 b{color:var(--ink)}
+.ctip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.35;display:none;max-width:260px;box-shadow:0 6px 20px #0004}
+.ctip b{display:block;font-size:16px}.ctip span{opacity:.8}
+.hb{display:grid;gap:8px}.hbr{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 2.6em;gap:10px;align-items:center}
+.hbl{display:flex;gap:3px;flex-wrap:wrap;align-items:center}.hbl i{font:600 14px Oswald;font-style:normal;background:var(--bg);border-radius:6px;padding:1px 7px}.hbl em{font-style:normal;font-size:11px;font-weight:600;color:var(--red);margin-left:4px}
+.hbt{height:12px}.hbt b{display:block;height:100%;background:var(--red);border-radius:0 4px 4px 0;min-width:2px}.hbv{text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.rec{background:var(--panel);border-radius:14px;padding:12px 14px;display:grid;gap:2px}.rec span{font-size:13px;color:var(--mute)}.rec b{font:600 24px Oswald}.rec small{font:400 12px Inter;color:var(--mute);margin-left:4px}
+.hist{display:grid;gap:8px;margin-bottom:40px}
+.hi{background:var(--panel);border-radius:14px;padding:0;margin:0}.hi summary{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto 2.6em;gap:10px;align-items:center;padding:12px 14px;list-style:none;min-height:52px}
+.hi summary::-webkit-details-marker{display:none}.hd{color:var(--mute);font-size:14px;white-space:nowrap}.hn{font-weight:600}.hm{color:var(--mute);font-size:14px;white-space:nowrap}
+.hs{font:600 22px Oswald;color:var(--red);text-align:right}.pt{font-style:normal;font-size:11px;background:var(--panel2);border-radius:999px;padding:1px 8px;color:var(--mute);vertical-align:middle}
+.hb2{padding:0 14px 14px}.rts{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.rts span{background:var(--bg);border-radius:10px;padding:6px 10px;font-size:14px}
+.hnote{font-style:italic;margin:6px 0}
+.rtab{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}.rtab th,.rtab td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}.rtab td:not(:nth-child(2)),.rtab th:not(:nth-child(2)){text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:600px){.hi summary{grid-template-columns:3.6em minmax(0,1fr) 2.4em}.hm{display:none}.scr{grid-template-columns:7.5em minmax(0,1fr) 3em}.rtab th:nth-child(4),.rtab td:nth-child(4){display:none}}
+.sb.wide{max-width:900px}
+.ctv{position:relative;aspect-ratio:4/3;background:#111;border-radius:16px;overflow:hidden;max-height:58vh;margin:0 auto}
+.ctv canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+.ctflash{position:absolute;inset:0;background:#c8102e;opacity:0;transition:opacity .05s}.ctflash.on{opacity:.85}
+.inds{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.ind{background:var(--panel);border-radius:999px;padding:8px 14px;font-weight:600}.ind i{font-style:normal;font-weight:400;color:var(--mute);margin-left:4px}
+.ind.ok{background:#1d7a4c;color:#fff}.ind.ok i,.ind.bad i{color:#fff}.ind.bad{background:#c8102e;color:#fff}
+.pip{position:absolute;right:12px;bottom:12px;width:min(26%,220px);aspect-ratio:4/3;border-radius:12px;z-index:4;transform:scaleX(-1);border:2px solid #ffffff40;background:#000}
+#run.tv .pip{bottom:clamp(54px,11vh,96px);right:max(14px,3vw);width:min(20vw,260px)}
+.camind{position:absolute;left:12px;bottom:12px;z-index:4;display:flex;gap:6px}
+#run.tv .camind{left:auto;right:max(14px,3vw);bottom:calc(clamp(54px,11vh,96px) + min(15vw,195px) + 10px)}
+.camind span{background:#1d7a4ccc;color:#fff;font-weight:700;font-size:13px;padding:4px 10px;border-radius:999px}.camind span.bad{background:#c8102e}
+.camind.lost span{background:#5d6370}
+.react{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);z-index:5;font:600 clamp(22px,5vh,44px) Oswald;color:#fff;background:#2f6fd6e0;padding:6px 18px;border-radius:12px;opacity:0;transition:opacity .15s;pointer-events:none}.react.on{opacity:1}
+.camsum{background:var(--panel);border-radius:14px;padding:12px 14px;display:grid;gap:3px;font-size:14px;margin-top:8px}.camsum b{font-family:Oswald;font-size:17px}.camsum .warn{color:var(--red)}
+@media(prefers-reduced-motion:reduce){.tok,.cd{animation:none}}
+@media(max-width:760px){.hin,.two{grid-template-columns:minmax(0,1fr)}.ring{max-width:400px;width:100%;justify-self:center;order:-1}.tabs{margin-left:0;width:100%}.tabs button{flex:1;padding:9px 2px;font-size:14px}
+ .rb{grid-template-columns:minmax(0,1fr);align-content:start;overflow:auto}.rfig{height:46vh;width:auto;max-height:46vh}.clock{font-size:60px}.call{min-height:54px;margin:8px 0}.cd{font-size:80px}
+ .vbar{gap:3px;left:4px;right:4px}.vbar button{font-size:12px;padding:4px 8px;min-height:30px}.flow li{grid-template-columns:3.4em minmax(0,1fr) auto}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">KÖŞE <span id="ver">v5</span></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-v="free" aria-selected="true">Serbest</button>
+    <button role="tab" data-v="combo" aria-selected="false"><span class="lgx">Kombinasyonlar</span><span class="smx">Kombo</span></button>
+    <button role="tab" data-v="lib" aria-selected="false">Teknikler</button>
+    <button role="tab" data-v="program" aria-selected="false">Program</button>
+    <button role="tab" data-v="stats" aria-selected="false"><span class="lgx">İstatistik</span><span class="smx">İstat.</span></button>
+  </nav>
+  <button class="gear" id="set-btn" aria-label="Ayarlar: profil ve ses"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<section class="view" id="v-free">
+  <div class="hero"><div class="hin">
+    <div>
+      <div class="kick">Son kullandığın mod</div>
+      <h1 class="big" id="f-name"></h1>
+      <div class="tags" id="f-tags"></div>
+      <p id="f-desc"></p>
+      <div class="row"><button class="go" id="f-go">Başla</button><button class="go2" id="f-edit">Düzenle</button></div>
+    </div>
+    <div class="ring st3" id="h1"></div>
+  </div></div>
+  <main>
+    <h2 class="sec">Modlarım</h2><p class="secd">Kendi antrenmanlarını kur, kaydet, tek dokunuşla başlat.</p>
+    <div class="grid" id="f-modes"></div>
+    <h2 class="sec">Sadece ısınma</h2><p class="secd">Salona gitmeden önce ya da başka bir antrenmanın öncesinde.</p>
+    <div class="wcards" id="f-warm"></div>
+  </main>
+</section>
+
+<section class="view" id="v-combo" hidden><main>
+  <div class="two">
+    <div>
+      <h2 class="sec">Yeni kombinasyon</h2><p class="secd">Salonda öğrendiklerini ekle. Antrenör, "Kombinasyonlarım" açık olan modlarda bunları da söyler.</p>
+      <div class="cseq" id="c-seq"></div>
+      <div class="kp" id="c-kp"></div>
+      <input type="text" id="c-name" placeholder="İsim (isteğe bağlı), örn. Hocanın 3'lüsü" maxlength="40">
+      <div class="row" style="margin-top:10px"><button class="btn" id="c-save">Kaydet</button><button class="btn g" id="c-undo">Geri al</button><button class="btn g" id="c-clear">Temizle</button></div>
+      <p class="note" id="c-msg"></p>
+    </div>
+    <div class="lfig st3 stick" id="h2c"></div>
+  </div>
+  <h2 class="sec" style="margin-top:30px">Kombinasyonlarım</h2>
+  <ul class="mylist" id="c-list"></ul>
+  <h2 class="sec">Hazır kombinasyonlar</h2><p class="secd">Uygulamadaki komut havuzu. İzlemek için dokun.</p>
+  <div id="c-ready"></div>
+</main></section>
+
+<section class="view" id="v-lib" hidden><main>
+  <div class="two">
+    <div class="lfig st3 stick" id="h2"></div>
+    <div>
+      <div class="chips" id="l-chips" style="margin-bottom:22px"></div>
+      <div class="lk" id="l-kind"></div>
+      <h1 class="big" id="l-name"></h1>
+      <div class="seg" id="l-speed" style="margin:14px 0;max-width:420px"><button data-s=".3" aria-pressed="true">Ağır çekim</button><button data-s=".6" aria-pressed="false">Yavaş</button><button data-s="1" aria-pressed="false">Gerçek hız</button></div>
+      <button class="btn" id="l-say">Antrenör anlatsın</button>
+      <ol class="steps" id="l-steps"></ol>
+      <div id="l-err"></div>
+    </div>
+  </div>
+</main></section>
+
+<section class="view" id="v-program" hidden><main id="p-body"></main></section>
+
+<section class="view" id="v-stats" hidden><main>
+  <h2 class="sec">İstatistik</h2><p class="secd">Evde Köşe ile yaptığın antrenmanlar. Bir antrenmanın ayrıntısı ve puan dökümü için geçmişteki satıra dokun.</p>
+  <div id="s-body"></div>
+</main></section>
+
+<!-- ayarlar: profil + ses -->
+<div class="sheet" id="set" hidden><div class="sb" role="dialog" aria-modal="true" aria-labelledby="set-t">
+  <div class="row" style="justify-content:space-between"><h2 id="set-t">Ayarlar</h2><button class="x" id="set-x" aria-label="Kapat" style="background:var(--panel)">×</button></div>
+  <h3 class="sh3">Profil</h3>
+  <div class="fld"><label for="p-name">İsmin</label><input type="text" id="p-name" maxlength="24" placeholder="Antrenör arada ismini söyler"></div>
+  <div class="fld"><span class="lb">Öğrendiğim teknikler</span><div class="chips" id="p-learn"></div><div class="hlp">Yeni bir şey öğrendikçe işaretle. Hazır kombinasyonlardan sadece bunlardan oluşanlar söylenir; kendi kaydettiğin kombinasyonlar her zaman söylenir.</div></div>
+  <div class="tg"><span>Sadece öğrendiklerimi söylesin<small>Kapatırsan seçtiğin komut havuzunun tamamı gelir.</small></span><button class="sw" role="switch" id="p-only" aria-label="Sadece öğrendiklerimi söylesin"></button></div>
+  <h3 class="sh3">Ses</h3>
+  <div class="fld"><label for="v-name">Antrenörün sesi</label><select id="v-name" style="width:100%"></select><div class="hlp" id="v-note"></div></div>
+  <div class="fld"><label for="v-rate">Konuşma hızı <output id="v-ratev"></output></label><input type="range" id="v-rate" min="0.8" max="1.5" step="0.05"><div class="hlp">Kombinasyon komutları bundan biraz daha hızlı söylenir.</div></div>
+  <div class="fld"><label for="v-vol">Antrenör ses seviyesi <output id="v-volv"></output></label><input type="range" id="v-vol" min="0.2" max="1" step="0.05"></div>
+  <div class="fld"><label for="v-sfx">Efekt sesleri (zil, lapa) <output id="v-sfxv"></output></label><input type="range" id="v-sfx" min="0" max="1" step="0.05"></div>
+  <button class="btn" id="v-test">Sesi dene</button>
+  <h3 class="sh3">Kamera</h3>
+  <p class="hlp" style="margin-top:0">Dizüstünün kamerası gardını ve omuzlarını izler, rakip ve lapa modlarında tepki süreni ölçer. Görüntü sadece bu bilgisayarda işlenir, hiçbir yere gönderilmez ve kaydedilmez.</p>
+  <div class="tg"><span>Antrenmanda kamerayı kullan<small>Raundlarda gard ve omuz takibi, tepki süresi ölçümü.</small></span><button class="sw" role="switch" id="c-on" aria-label="Kamerayı kullan"></button></div>
+  <div class="fld"><label for="c-dev">Kamera</label><select id="c-dev" style="width:100%"></select></div>
+  <div class="tg"><span>Sesli gard uyarısı<small>Elin uzun süre düşük kalınca "sol el yukarı" der.</small></span><button class="sw" role="switch" id="c-vd" aria-label="Sesli gard uyarısı"></button></div>
+  <div class="tg"><span>Omuz uyarısı<small>Omzunu uzun süre kasarsan "omuzlar aşağı" der. Kalibrasyon gerekir.</small></span><button class="sw" role="switch" id="c-vs" aria-label="Omuz uyarısı"></button></div>
+  <div class="tg"><span>Antrenmanda kamera görüntüsünü göster<small>Köşede küçük bir pencerede iskeletini görürsün.</small></span><button class="sw" role="switch" id="c-pip" aria-label="Kamera görüntüsünü göster"></button></div>
+  <button class="btn" id="c-test" style="margin-top:10px">Kamera testi ve kalibrasyon</button>
+</div></div>
+
+<!-- kamera testi -->
+<div class="sheet" id="camt" hidden><div class="sb wide" role="dialog" aria-modal="true" aria-labelledby="ct-t">
+  <div class="row" style="justify-content:space-between"><h2 id="ct-t">Kamera testi</h2><button class="x" id="ct-x" aria-label="Kapat" style="background:var(--panel)">×</button></div>
+  <p class="hlp" id="ct-st" style="margin:0 0 10px"></p>
+  <div class="ctv"><canvas id="ct-cv"></canvas><div class="ctflash" id="ct-flash"></div></div>
+  <div class="inds"><span class="ind" id="ct-l">Sol el <i></i></span><span class="ind" id="ct-r">Sağ el <i></i></span><span class="ind" id="ct-s">Omuz <i></i></span></div>
+  <div class="tg"><span>Sol ve sağı ters çevir<small>Sol elini indirdiğinde "Sağ el" yanıyorsa aç.</small></span><button class="sw" role="switch" id="ct-swap" aria-label="Sol ve sağı ters çevir"></button></div>
+  <p class="hlp">Kırmızı kesikli çizgi gard sınırı: bileğin bu çizginin altında 0,7 saniyeden uzun kalırsa "gard düştü" sayılır. Yumruk atarken kısa süreli inişler sayılmaz.</p>
+  <div class="row"><button class="btn" id="ct-calb">Kalibre et (gardında 3 sn dur)</button><button class="btn g" id="ct-react">Tepki testi</button><span class="hlp" id="ct-cal"></span></div>
+  <p id="ct-res" style="font-weight:600;min-height:1.5em"></p>
+</div></div>
+
+<!-- mod kurucu -->
+<div class="sheet" id="ed" hidden><div class="sb" role="dialog" aria-modal="true" aria-labelledby="ed-t">
+  <div class="row" style="justify-content:space-between"><h2 id="ed-t">Mod</h2><button class="x" id="ed-x" aria-label="Kapat" style="background:var(--panel)">×</button></div>
+  <div class="fld"><label for="ed-name">Mod adı</label><input type="text" id="ed-name" maxlength="40"></div>
+  <div class="fld"><span class="lb">Tür</span><div class="seg" id="ed-kind"></div><div class="hlp" id="ed-kindd"></div></div>
+  <div class="fld"><span class="lb">Raund sayısı</span><div class="stp"><button data-d="-1" aria-label="Azalt">−</button><b id="ed-rounds"></b><button data-d="1" aria-label="Arttır">+</button></div></div>
+  <div class="fld"><span class="lb">Raund süresi</span><div class="seg" id="ed-len"></div></div>
+  <div class="fld"><span class="lb">Dinlenme</span><div class="seg" id="ed-rest"></div></div>
+  <div class="fld"><span class="lb">Isınma</span><div class="seg" id="ed-warm"></div></div>
+  <div class="fld"><span class="lb">Komut havuzu</span><div class="seg" id="ed-pool"></div></div>
+  <div class="fld"><span class="lb">Kombinasyonlarım</span><div class="seg" id="ed-mine"></div><div class="hlp" id="ed-mined"></div></div>
+  <div class="fld"><span class="lb">Tempo</span><div class="seg" id="ed-tempo"></div></div>
+  <div class="fld" id="ed-sparf"><span class="lb">Rakip zorluğu</span><div class="seg" id="ed-diff"></div><div class="hlp">Kolay: yumruktan önce uzun uyarı ve ekranda ipucu. Zor: kısa uyarı, ipucu yok, arada aldatma.</div></div>
+  <div class="fld"><span class="lb">Antrenör</span><div class="seg" id="ed-talk"></div></div>
+  <div id="ed-tg"></div>
+  <div class="sum"><p id="ed-sum"></p><div class="row"><button class="btn" id="ed-go">Kaydet ve başla</button><button class="btn g" id="ed-save">Kaydet</button><button class="btn g" id="ed-dup">Kopyala</button><button class="btn g" id="ed-del">Sil</button></div></div>
+</div></div>
+
+<!-- ısınma seçimi -->
+<div class="sheet" id="wp" hidden><div class="sb" role="dialog" aria-modal="true" aria-labelledby="wp-t">
+  <div class="row" style="justify-content:space-between"><h2 id="wp-t">Isınma seç</h2><button class="x" id="wp-x" aria-label="Kapat" style="background:var(--panel)">×</button></div>
+  <div class="wopt" id="wp-list"></div>
+  <button class="btn" id="wp-go" style="width:100%">Başla</button>
+</div></div>
+
+<div id="run" hidden>
+  <div class="rt"><div class="lbl"><span id="r-step"></span><b id="r-title"></b></div><button class="x" id="r-zoom" aria-label="Kadraj: yakın ya da geniş" style="width:auto;padding:0 12px;font-size:15px" hidden>Yakın</button><button class="x" id="r-tv" aria-label="TV modu" style="width:auto;padding:0 12px;font-size:15px">TV</button><button class="x" id="r-x" aria-label="Antrenmanı bitir">×</button></div>
+  <div class="dots" id="r-dots"></div>
+  <div class="rb" id="r-body">
+    <div class="rfig st3" id="h3"><canvas class="pip" id="r-pip" hidden></canvas><div class="camind" id="r-cam" hidden><span class="gl">Sol</span><span class="gr">Sağ</span></div><div class="react" id="r-react"></div><div class="hud"><div class="edge l" id="r-el"></div><div class="edge r" id="r-er"></div><div class="dhint" id="r-dh"></div></div></div>
+    <div class="info">
+      <div class="state" id="r-state"></div>
+      <div id="r-big"><div class="clock" id="r-clock">0:00</div></div>
+      <div class="call" id="r-call"></div>
+      <div class="cap" id="r-cap"><span>Antrenör</span><em id="r-say" style="font-style:normal"></em></div>
+      <div class="cnt" id="r-cnt"></div>
+    </div>
+  </div>
+  <div class="rc">
+    <button class="main" id="r-pause">Duraklat</button>
+    <button id="r-skip">Sonraki</button>
+    <button id="r-sh">Omzum yoruldu</button>
+    <button id="r-voice">Ses açık</button>
+  </div>
+</div>
+
+<div id="end" hidden><div class="eb" role="dialog" aria-modal="true" aria-labelledby="e-t">
+  <h2 class="big" id="e-t">Bitti</h2>
+  <p class="note" id="e-sub" style="font-size:15px"></p>
+  <div id="e-rt">
+    <div class="fld"><span class="lb">Zorluk <small>1 çok rahat · 10 son gücüme kadar</small></span><div class="seg rs" id="e-rpe"></div></div>
+    <div class="fld"><span class="lb">Teknik <small>1 dağınıktı · 5 çok temizdi</small></span><div class="seg rs" id="e-tek"></div></div>
+    <div class="fld"><span class="lb">Kondisyon <small>1 erken bittim · 5 sonuna kadar dayandım</small></span><div class="seg rs" id="e-kon"></div></div>
+    <div class="fld"><span class="lb">Sol omuz <small>1 hiç yorulmadı · 10 yumruk atamaz hale geldim</small></span><div class="seg rs" id="e-om"></div></div>
+    <div class="fld"><label for="e-not">Not <small>isteğe bağlı</small></label><textarea id="e-not" rows="2" maxlength="200" placeholder="örn. 3. raundda sol el düştü"></textarea></div>
+    <div id="e-cam"></div>
+    <div id="e-score"></div>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="btn" id="e-ok" style="flex:1">Kaydet</button><button class="btn g" id="e-skip">Kaydetme</button></div>
+</div></div>
+
+<script type="module" src="./app.js"></script>
+<script>if ("serviceWorker" in navigator && location.protocol !== "file:") addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));</script>
+</body>
+</html>
