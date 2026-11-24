@@ -94,11 +94,28 @@ export const KINDS = {
   spar: { n: "Rakip", d: "Rakip sana yumruk atar: eldiveni parlar, sen savunup karşılık verirsin." },
   mix: { n: "Karışık", d: "Raund raund gölge, lapa ve rakip sırayla gelir." }
 };
+export const THEMES = {
+  duz: { n: "Düz yumruk", d: "Jab ve cross isabeti, hızlı geri dönüş", say: "düz yumruk. Jab ve cross; temiz at, hızlı geri getir.",
+    p: [["1", "2", "1-1"], ["1-2", "1-1-2", "1-2-1", "1-b2", "b1-2", "1-2-1-2"], ["1-2", "1-1-2", "1-2-1-2"]], cues: ["Jabdan sonra el yüze", "Kalçadan dön", "Hızlı geri getir"], opp: [["1"], ["2"], ["1", "2"], ["1", "1"]] },
+  ayak: { n: "Ayak ve açı", d: "Vur ve yer değiştir; adım, yan çıkış, pivot", say: "ayak ve açı. Vur, sonra yer değiştir. Ayakların hiç durmasın.",
+    p: [["step-1", "1-back", "side-1"], ["1-2-side", "step-1-2-back", "1-2-pivot", "1-1-2-side"], ["1-2-back", "step-1-2", "1-2-side"]], cues: ["Ayaklarını oynat", "Vur ve orada durma", "Açı al"], opp: [["1"], ["2"], ["1", "2"]], move: 2 },
+  savunma: { n: "Savunma ve karşılık", d: "Slip, roll, parry, çekilme ve hemen ardından karşılık", say: "savunma ve karşılık. Önce savun, hemen karşılık ver.",
+    p: [["slip-2", "islip-1", "roll", "parry-2", "pull-2"], ["slip-2-3", "roll-2-1", "parry-2-1", "pull-2-1", "1-2-slip-2"], ["1-2-roll-2", "slip-2-1-2", "2-roll-2"]], cues: ["Savun ve hemen karşılık", "Dizlerden in", "Gözler önde"], opp: null },
+  govde: { n: "Kafa ve gövde", d: "Seviye değiştir: kafaya ve gövdeye karışık", say: "kafa ve gövde. Seviye değiştir; dizlerden in, belden eğilme.",
+    p: [["b1", "b2", "1-b2"], ["1-b2-2", "b1-2", "1-2-b3", "b1-b2", "1-b1-2"], ["b1-2-3", "1-b2-3", "b3-3"]], cues: ["Dizlerden in", "Belden eğilme", "Gövdeden sonra kafaya"], opp: null },
+  krose: { n: "Kroşe ve aparkat", d: "Kısa yaylar, kalça dönüşü", say: "kroşe ve aparkat. Kısa yaylar, kalçayla döndür.",
+    p: [["3", "4", "5", "6"], ["1-2-3", "2-3-2", "1-6", "6-3", "3-2"], ["1-2-3-2", "1-6-3-2", "2-3-roll-3-2"]], cues: ["Kısa yay", "Kalçayla döndür", "Dirsek omuz hizasında"], opp: [["3"], ["4"], ["2", "3"], ["5"], ["6"]] },
+  gard: { n: "Gard disiplini", d: "Yavaş tempo; vuran el hemen yüze, omuzlar gevşek", say: "gard disiplini. Yavaş at; vuran el hemen yüzüne dönsün, omuzlar gevşek.",
+    p: [["1", "1-1", "2"], ["1-2", "1-1-2", "1-2-1"], ["1-2", "1-1-2"]], cues: ["Sol el yüzüne geri", "Omuzlar aşağı, gevşe", "Çene aşağı", "Vuran el hemen yüze"], opp: [["1"], ["1", "1"], ["2"]], slow: 1 },
+  serbest: { n: "Serbest", d: "Seçtiğin havuzdan karışık", say: "serbest. Öğrendiğin her şey karışık gelecek.", p: null, cues: [], opp: null }
+};
+export const THEME_ORDER = ["duz", "ayak", "savunma", "govde", "krose", "gard", "serbest"];
+export const PHASE_SAY = ["Önce tek tek.", "Şimdi kombinasyonlar.", "Son bölüm, hızlan!"];
 export const SEED = [
-  { id: "m1", name: "Sanal lapacı 6×2", kind: "pads", rounds: 6, len: 120, rest: 45, warm: "ask", pool: 12, mine: "mix", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true },
-  { id: "m2", name: "Gölge 3×3", kind: "shadow", rounds: 3, len: 180, rest: 60, warm: "ask", pool: 12, mine: "mix", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true },
-  { id: "m3", name: "Savunma refleksi 4×2", kind: "spar", rounds: 4, len: 120, rest: 60, warm: "ask", pool: 6, mine: "off", tempo: "mid", burst: false, shoulder: false, talk: 1, voice: true, diff: "mid", counters: true },
-  { id: "m4", name: "Karışık 6×3", kind: "mix", rounds: 6, len: 180, rest: 60, warm: "ask", pool: 12, mine: "mix", tempo: "var", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true }
+  { id: "m1", name: "Sanal lapacı 6×2", kind: "pads", rounds: 6, len: 120, rest: 45, warm: "ask", pool: 12, mine: "mix", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true, guide: true, themes: null, move: "mid" },
+  { id: "m2", name: "Gölge 3×3", kind: "shadow", rounds: 3, len: 180, rest: 60, warm: "ask", pool: 12, mine: "mix", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true, guide: true, themes: null, move: "mid" },
+  { id: "m3", name: "Savunma refleksi 4×2", kind: "spar", rounds: 4, len: 120, rest: 60, warm: "ask", pool: 6, mine: "off", tempo: "mid", burst: false, shoulder: false, talk: 1, voice: true, diff: "mid", counters: true, guide: true, themes: null, move: "mid" },
+  { id: "m4", name: "Karışık 6×3", kind: "mix", rounds: 6, len: 180, rest: 60, warm: "ask", pool: 12, mine: "mix", tempo: "var", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true, guide: true, themes: null, move: "mid" }
 ];
 export const PH = [["Düz yumruklar", "Duruş, adımlar, jab ve cross. Gücü bacaktan al, omzu gevşek tut."], ["Savunma ve kaçışlar", "Parry, slip, roll, geri çekilme. Vur ve orada durma."], ["Kroşe ve aparkat", "Kısa yaylar, kalça dönüşü, dizden gelen aparkatlar."], ["Kombinasyonlar", "Savun, karşılık ver, açı değiştir. Hepsi akış halinde."]];
 export const FOCUS = { 1: ["stance", "1", "step"], 2: ["2", "1-2", "back"], 3: ["1-1-2", "b1", "pivot"], 4: ["parry", "slip", "islip"], 5: ["roll", "pull", "slip-2"], 6: ["side", "1-2-roll", "roll-2-1"],

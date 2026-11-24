@@ -1,5 +1,5 @@
 import { World, P3, HG, PAD, HATK, O, F, G, dip, shell } from "./world3d.js";
-import { M, KEYPAD, LEAD, STRIKE, DEF, FOOT, CB, LEVELS, WM, WP, KINDS, SEED, PH, FOCUS, CUES, PRAISE, OPP, OPP_SETS, LEARN_DEFAULT } from "./data.js";
+import { M, KEYPAD, LEAD, STRIKE, DEF, FOOT, CB, LEVELS, WM, WP, KINDS, SEED, PH, FOCUS, CUES, PRAISE, OPP, OPP_SETS, LEARN_DEFAULT, THEMES, THEME_ORDER, PHASE_SAY } from "./data.js";
 import { computeScore, scoreHTML, renderStats } from "./stats.js";
 import { Cam } from "./cam.js";
 
@@ -22,7 +22,8 @@ if (!Array.isArray(st.modes) || !st.modes.length) st.modes = JSON.parse(JSON.str
 if (!st.zoom || typeof st.zoom !== "object") st.zoom = { pads: "near", spar: "wide" };
 if (!st.cam || typeof st.cam !== "object") st.cam = { on: false, dev: "", vDrop: true, vShrug: true, pip: true, calib: null };
 if (!st.prof || !Array.isArray(st.prof.learned)) st.prof = { name: "", learned: LEARN_DEFAULT.slice(), only: true };
-if (!Array.isArray(st.log)) st.log = []; if (!Array.isArray(st.combos)) st.combos = [];
+if (!Array.isArray(st.log)) st.log = [];
+st.modes.forEach(m => { if (m.guide == null) m.guide = true; if (!m.move) m.move = "mid"; if (m.themes === undefined) m.themes = null; }); if (!Array.isArray(st.combos)) st.combos = [];
 const save = () => { try { localStorage.setItem("kose-v4", JSON.stringify(st)); } catch (e) { } };
 
 /* ================= 3B SAHNE ================= */
@@ -41,7 +42,7 @@ try {
 } catch (e) { failed = true; }
 
 const padT = tempo => ({ slow: 720, mid: 540, fast: 420 }[tempo] || 540);
-function padFrames(str, T) {
+function padFrames(str, T, gp) {
   const f = []; let prev = null;
   for (const t of toks(str)) {
     if (PAD[t]) {
@@ -54,7 +55,21 @@ function padFrames(str, T) {
     }
   }
   f.push(F(HG, 380)); f.push(F(dip(HG, 0.02), 320)); f.push(F(HG, 320));
+  if (gp) f.forEach(x => { x.p = O(x.p, { gp }); });
   return f;
+}
+function padMove(w) {
+  const hp = R.hp, opts = []; if (hp[1] > -0.3) opts.push("back"); if (hp[1] < 0.12) opts.push("fwd"); opts.push("side");
+  const far = Math.abs(hp[0]) > 0.2 || hp[1] < -0.25, kind = far && Math.random() < 0.6 ? "center" : rnd(opts);
+  const nw = kind === "back" ? [hp[0], hp[1] - 0.28] : kind === "fwd" ? [hp[0], hp[1] + 0.22] : kind === "side" ? [Math.abs(hp[0]) > 0.12 ? 0 : (Math.random() < 0.5 ? -0.3 : 0.3), hp[1]] : [0, 0];
+  const low = { lh: [0.2, 1.15, 0.22], rh: [-0.2, 1.15, 0.22] };
+  const f = [F(O(HG, { ...low, gp: [(hp[0] + nw[0]) / 2, (hp[1] + nw[1]) / 2] }), 280), F(O(HG, { ...low, gp: nw }), 300, 120), F(O(HG, { gp: nw }), 260)];
+  R.hp = nw;
+  const msg = { back: ["TAKİP ET · GİR", "Geri çekildi. Adımla gir, jabla başla."], fwd: ["GERİ ADIM", "Üstüne geliyor, geri adım."], side: ["AÇI AL", "Yana kaydı, ayaklarınla takip et."], center: ["ORTAYA", "Ortaya dön."] }[kind];
+  if (kind === "back") R.forceIn = true;
+  hint(msg[0], "ctr", 1300); speak(msg[1], null, true); $("r-call").innerHTML = "";
+  w.Bc.playFrames(f, false, 1, 0);
+  return f.reduce((a, x) => a + x.d + x.h, 0) / 1000;
 }
 function previewMode(kind) {
   stage("h1", w => {
@@ -108,7 +123,7 @@ const modeById = id => st.modes.find(m => m.id === id);
 const lenTxt = s => s % 60 ? mm(s) : s / 60 + " dk";
 const warmLbl = k => k === "ask" ? "Isınma: her seferinde sor" : "Isınma: " + WP[k].n;
 const warmDur = k => WP[k] ? WP[k].list.reduce((a, x) => a + x[1], 0) : 0;
-function modeTags(m) { return [KINDS[m.kind].n, `${m.rounds} × ${lenTxt(m.len)}`, `${m.rest} sn dinlenme`, warmLbl(m.warm), LEVELS.find(l => l[0] === m.pool)[1]]; }
+function modeTags(m) { return [KINDS[m.kind].n, `${m.rounds} × ${lenTxt(m.len)}`, `${m.rest} sn dinlenme`, warmLbl(m.warm), m.guide !== false ? "Yönlendirmeli" : "Rastgele", LEVELS.find(l => l[0] === m.pool)[1]]; }
 function stats(el) {
   const L = st.log, now = new Date(), wd = (now.getDay() + 6) % 7, ws = new Date(now.getFullYear(), now.getMonth(), now.getDate() - wd).getTime();
   let streak = 0; for (let i = 0; i < 60; i++) { const a = ws - 7 * 864e5 * i, b = a + 7 * 864e5; if (L.some(x => x.t >= a && x.t < b)) streak++; else if (i > 0) break; }
@@ -135,7 +150,8 @@ function segUI(el, opts, cur, on) {
 }
 function tgUI(key, label, sub) { return `<div class="tg"><span>${label}<small>${sub}</small></span><button class="sw" role="switch" data-k="${key}" aria-checked="${!!ed[key]}" aria-label="${label}"></button></div>`; }
 function openEd(m) {
-  edNew = !m; ed = m ? JSON.parse(JSON.stringify(m)) : { id: "m" + Date.now(), name: "Yeni mod", kind: "pads", rounds: 4, len: 120, rest: 60, warm: "ask", pool: 12, mine: "mix", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true };
+  edNew = !m; ed = m ? JSON.parse(JSON.stringify(m)) : { id: "m" + Date.now(), name: "Yeni mod", kind: "pads", rounds: 4, len: 120, rest: 60, warm: "ask", pool: 12, mine: "mix", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: "mid", counters: true, guide: true, themes: null, move: "mid" };
+  if (ed.guide == null) ed.guide = true; if (!ed.move) ed.move = "mid";
   $("ed-t").textContent = edNew ? "Yeni mod" : "Modu düzenle"; $("ed-name").value = ed.name; $("ed-name").oninput = e => { ed.name = e.target.value; };
   segUI($("ed-kind"), Object.entries(KINDS).map(([k, v]) => [k, v.n]), ed.kind, v => { ed.kind = v; edKind(); });
   $("ed-rounds").textContent = ed.rounds;
@@ -146,14 +162,26 @@ function openEd(m) {
   segUI($("ed-pool"), LEVELS.map(l => [l[0], l[1]]), ed.pool, v => ed.pool = v);
   segUI($("ed-mine"), [["off", "Kapalı"], ["mix", "Hazırlarla karışık"], ["only", "Sadece benimkiler"]], ed.mine, v => { ed.mine = v; edMine(); });
   segUI($("ed-tempo"), [["slow", "Yavaş"], ["mid", "Orta"], ["fast", "Hızlı"], ["var", "Değişken"]], ed.tempo, v => ed.tempo = v);
+  segUI($("ed-move"), [["low", "Az"], ["mid", "Normal"], ["high", "Çok"]], ed.move, v => ed.move = v);
+  segUI($("ed-flow"), [[1, "Yönlendirmeli"], [0, "Rastgele"]], ed.guide ? 1 : 0, v => { ed.guide = v === 1; edFlow(); });
   segUI($("ed-diff"), [["easy", "Kolay"], ["mid", "Orta"], ["hard", "Zor"]], ed.diff, v => ed.diff = v);
   segUI($("ed-talk"), [[1, "Az konuşsun"], [2, "Normal"], [3, "Çok konuşsun"]], ed.talk, v => ed.talk = v);
   $("ed-tg").innerHTML = tgUI("voice", "Komutları sesli söylesin", "Kapalıysa sadece ekranda görürsün; refleks için iyi.") + tgUI("burst", "Son 30 saniye hız patlaması", "Her raundun sonunda tempo artar.") + tgUI("counters", "Rakipte karşılık çağır", "Savunmadan sonra hangi kombinasyonla karşılık vereceğini söyler.") + tgUI("shoulder", "Sol omzu koru", "Jab, gövde jabı, sol kroşe ve sol aparkat azalır; sağ el, savunma ve ayak çalışması artar.");
   $("ed-tg").querySelectorAll(".sw").forEach(b => b.onclick = () => { ed[b.dataset.k] = !ed[b.dataset.k]; b.setAttribute("aria-checked", !!ed[b.dataset.k]); });
   $("ed-del").hidden = edNew || st.modes.length < 2; $("ed-dup").hidden = edNew;
-  edKind(); edMine(); edSum(); $("ed").hidden = false;
+  edKind(); edMine(); edSum(); edFlow(); $("ed").hidden = false;
 }
-function edKind() { $("ed-kindd").textContent = KINDS[ed.kind].d; $("ed-sparf").hidden = !(ed.kind === "spar" || ed.kind === "mix"); }
+function edFlow() {
+  $("ed-flowd").textContent = ed.guide ? "Her raundun bir konusu olur; raund tek tek başlar, kombinasyonlara çıkar, sonda hızlanır. Kamera açıksa zayıf noktana göre vurgu yapar. Sadece öğrendiğin teknikler kullanılır." : "Antrenör seçtiğin havuzdan rastgele söyler.";
+  $("ed-thf").hidden = !ed.guide; if (!ed.guide) return;
+  const kinds = ed.kind === "mix" ? ["shadow", "pads", "spar"] : [ed.kind], sel = ed.themes && ed.themes.length ? ed.themes : THEME_ORDER.slice();
+  const ok = id => kinds.some(k => availThemes(ed, k).includes(id));
+  $("ed-themes").innerHTML = THEME_ORDER.map(id => `<button class="chip${ok(id) ? "" : " na"}" data-t="${id}" aria-pressed="${sel.includes(id)}" title="${esc(THEMES[id].d)}">${THEMES[id].n}${ok(id) ? "" : "<small>öğrenilmemiş</small>"}</button>`).join("");
+  $("ed-themes").querySelectorAll(".chip").forEach(b => b.onclick = () => { let cur = ed.themes && ed.themes.length ? ed.themes.slice() : THEME_ORDER.slice(); const id = b.dataset.t; cur = cur.includes(id) ? cur.filter(x => x !== id) : cur.concat(id); if (!cur.length) cur = ["serbest"]; ed.themes = cur.length === THEME_ORDER.length ? null : THEME_ORDER.filter(x => cur.includes(x)); edFlow(); });
+  const na = THEME_ORDER.filter(id => !ok(id)).map(id => THEMES[id].n);
+  $("ed-thd").textContent = "Raundlar işaretli konular arasında sırayla döner." + (na.length ? ` Soluk olanlar için gereken teknikleri profilinde henüz işaretlemedin; seçili olsalar da atlanırlar (${na.join(", ")}).` : "");
+}
+function edKind() { edFlow(); $("ed-kindd").textContent = KINDS[ed.kind].d; $("ed-sparf").hidden = !(ed.kind === "spar" || ed.kind === "mix"); }
 function edMine() { $("ed-mined").textContent = st.combos.length ? `${st.combos.length} kayıtlı kombinasyonun var.` : "Henüz kayıtlı kombinasyonun yok. Kombinasyonlar sekmesinden ekleyebilirsin."; }
 function edSum() { const w = ed.warm === "ask" ? 0 : warmDur(ed.warm), t = ed.rounds * ed.len + (ed.rounds - 1) * ed.rest + w; $("ed-sum").textContent = `Toplam yaklaşık ${Math.round(t / 60)} dakika${ed.warm === "ask" ? " + seçeceğin ısınma" : ""}.`; }
 function edCommit() { ed.name = (ed.name || "").trim() || "Modum"; const i = st.modes.findIndex(m => m.id === ed.id); if (i >= 0) st.modes[i] = ed; else st.modes.push(ed); st.lastMode = ed.id; save(); $("ed").hidden = true; }
@@ -243,7 +271,7 @@ function buildProg(w, d, wk) {
   const ph = Math.ceil(w / 3), fo = FOCUS[w], dr = [fo[(d - 1) % 3], fo[d % 3]], b = warmBlocks(wk);
   dr.forEach(f => { b.push({ ty: "tech", ti: "Teknik: " + nm(f), dur: 90, tok: f, brief: techBrief(f) }); b.push({ ty: "rest", ti: "Kısa mola", dur: 25 }); });
   const n = [3, 4, 4, 5][ph - 1] + (d === 3 ? 1 : 0), len = [120, 150, 180, 180][ph - 1], cyc = ph === 1 ? ["shadow", "pads"] : ["shadow", "pads", "spar"];
-  const cfg = { pool: w, mine: "off", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: ph < 3 ? "easy" : "mid", counters: true };
+  const cfg = { pool: w, mine: "off", tempo: "mid", burst: true, shoulder: false, talk: 2, voice: true, diff: ph < 3 ? "easy" : "mid", counters: true, guide: true, themes: null, move: "mid" };
   for (let r = 1; r <= n; r++) { const k = cyc[(r - 1) % cyc.length]; b.push({ ty: "round", ti: `Raund ${r}/${n} · ${KINDS[k].n}`, dur: len, mode: k, cfg, r, n }); if (r < n) b.push({ ty: "rest", ti: "Dinlenme", dur: 60 }); }
   b.push({ ty: "rest", ti: "Dinlenme", dur: 40 });
   if (d === 2) [["band_er", 50], ["band_fp", 50], ["band_pa", 50], ["guardhold", 40]].forEach(([x, s], i) => b.push({ ty: "ex", ti: WM[x].n, dur: s, ex: x, intro: i === 0 ? "Şimdi omuz dayanıklılığı. Bandını al." : null }));
@@ -278,7 +306,7 @@ function launch(blocks, meta) {
   if (!blocks.length) return; audio();
   try { navigator.wakeLock && navigator.wakeLock.request("screen").then(x => wl = x).catch(() => { }); } catch (e) { }
   R = { b: blocks, meta, i: -1, ph: "", acc: 0, run: 0, paused: false, sh: false, hits: 0, combos: 0, atks: 0, ctrs: 0, lastKind: null };
-  R.sh = blocks.some(x => x.cfg && x.cfg.shoulder); R.closed = {}; R.base = { hits: 0, combos: 0, atks: 0, ctrs: 0 };
+  R.sh = blocks.some(x => x.cfg && x.cfg.shoulder); R.spK = st.sparK || 1; R.closed = {}; R.base = { hits: 0, combos: 0, atks: 0, ctrs: 0 };
   R.cm = { on: false, frames: 0, seenF: 0, dropsL: 0, dropsR: 0, dropMsL: 0, dropMsR: 0, shrugs: 0, reacts: [], misses: 0, monSec: 0, base: null };
   if (st.cam.on) camStartRun();
   R.rec = { t0: Date.now(), planned: blocks.filter(x => x.ty !== "rest").reduce((a, x) => a + x.dur, 0), active: 0, roundSec: 0, skipped: 0, pauses: 0, rounds: [], cu: {}, shAt: null };
@@ -308,8 +336,12 @@ const KIND_BRIEF = {
 function closeBlock() {
   if (!R || R.i < 0 || R.i >= R.b.length || R.closed[R.i]) return; const b = R.b[R.i], act = R.ph === "work" ? Math.min(segT(), b.dur) : 0; R.closed[R.i] = 1;
   if (b.ty !== "rest") { R.rec.active += act; if (act < b.dur * 0.9) R.rec.skipped++; }
+  if (b.ty === "round" && b.mode === "spar" && b.cfg.guide && R.cm.on && act > 40) {
+    const rs = R.cm.reacts.slice((R.cm.base || {}).reacts || 0), mis = R.cm.misses - ((R.cm.base || {}).misses || 0), a = rs.length ? rs.reduce((x, y) => x + y, 0) / rs.length : null;
+    let k = st.sparK || 1; if (a != null && a < 380 && mis <= 1) k *= 0.9; else if (mis >= 3 || (a != null && a > 600)) k *= 1.12; st.sparK = Math.min(1.5, Math.max(0.6, k)); R.spK = st.sparK; save();
+  }
   if (b.ty === "round") { R.rec.roundSec += act; const cb = R.cm.base || {}; R.rec.rounds.push({ mode: b.mode, dur: b.dur, act: Math.round(act), combos: R.combos - R.base.combos, hits: R.hits - R.base.hits, atks: R.atks - R.base.atks, ctrs: R.ctrs - R.base.ctrs, tempo: b.cfg.tempo, diff: b.cfg.diff, burst: !!b.cfg.burst,
-    ...(R.cm.on ? { dropsL: R.cm.dropsL - (cb.dropsL || 0), dropsR: R.cm.dropsR - (cb.dropsR || 0), shrugs: R.cm.shrugs - (cb.shrugs || 0), reacts: R.cm.reacts.slice(cb.reacts || 0) } : {}) }); }
+    ...(R.cm.on ? { dropsL: R.cm.dropsL - (cb.dropsL || 0), dropsR: R.cm.dropsR - (cb.dropsR || 0), shrugs: R.cm.shrugs - (cb.shrugs || 0), reacts: R.cm.reacts.slice(cb.reacts || 0), statics: (R.cm.statics || 0) - (cb.statics || 0) } : {}), theme: b.theme || null }); }
 }
 const useC = c => { if (R) R.rec.cu[c] = (R.rec.cu[c] || 0) + 1; };
 function nextB() {
@@ -335,8 +367,18 @@ function nextB() {
   $("r-state").textContent = "Antrenör anlatıyor";
   if (b.ty === "tech") { stage("h3", w => w.demo(b.tok, true, 0.4)); showCall(b.tok); runBrief(b.brief); return; }
   if (b.ty === "round") {
-    R.base = { hits: R.hits, combos: R.combos, atks: R.atks, ctrs: R.ctrs }; R.cm.base = { dropsL: R.cm.dropsL, dropsR: R.cm.dropsR, shrugs: R.cm.shrugs, reacts: R.cm.reacts.length };
-    const lines = []; if (R.lastKind !== b.mode) lines.push(...KIND_BRIEF[b.mode]); lines.push(b.r === 1 ? `${b.n} raund, her biri ${lenTxt(b.dur)}. Hazır ol.` : `Raund ${b.r}. Hazır ol.`);
+    R.base = { hits: R.hits, combos: R.combos, atks: R.atks, ctrs: R.ctrs }; R.cm.base = { dropsL: R.cm.dropsL, dropsR: R.cm.dropsR, shrugs: R.cm.shrugs, reacts: R.cm.reacts.length, misses: R.cm.misses, statics: R.cm.statics || 0 };
+    R.hp = [0, 0]; R.op = [0, 0]; R.phase = -1; R.lastMove = 0; R.forceIn = false; R.emph = null;
+    const lines = []; if (R.lastKind !== b.mode) lines.push(...KIND_BRIEF[b.mode]);
+    if (b.cfg.guide) {
+      const list = availThemes(b.cfg, b.mode); R.tc = R.tc || {}; const k = R.tc[b.mode] || 0; b.theme = list[k % list.length]; R.tc[b.mode] = k + 1;
+      const last = R.rec.rounds[R.rec.rounds.length - 1];
+      if (R.cm.on && last && last.dropsL != null && last.act > 30) { const dpm = (last.dropsL + last.dropsR) / (last.act / 60); if (dpm >= 3) R.emph = last.dropsL >= last.dropsR ? "solgard" : "sağgard"; else if ((last.shrugs || 0) >= 2) R.emph = "omuz"; }
+      lines.push(`${b.r === 1 ? `${b.n} raund, her biri ${lenTxt(b.dur)}. ` : ""}Raund ${b.r}: ${THEMES[b.theme].say}`);
+      if (R.emph) lines.push({ solgard: "Geçen raund sol elin sık düştü. Bu raund vurduğun el hemen yüzüne dönsün, tempo biraz yavaş.", "sağgard": "Geçen raund sağ elin sık düştü. Sağ el hep çenende kalsın, tempo biraz yavaş.", omuz: "Geçen raund omzunu kastın. Bu raund omuzlar aşağı, gevşek kal." }[R.emph]);
+      lines.push("Hazır ol.");
+      $("r-title").textContent = b.ti + " · " + THEMES[b.theme].n;
+    } else lines.push(b.r === 1 ? `${b.n} raund, her biri ${lenTxt(b.dur)}. Hazır ol.` : `Raund ${b.r}. Hazır ol.`);
     R.lastKind = b.mode;
     stage("h3", w => { if (b.mode === "pads") { w.setMode("pads"); w.Bc.playFrames([F(dip(HG, 0.02), 400), F(HG, 400)], true, 1, 0); } else if (b.mode === "spar") { w.setMode("spar"); idleOpp(w); } else w.demo("stance", true, 0.5); chrome(); });
     runBrief(lines); return;
@@ -357,7 +399,44 @@ function begin() {
   if (b.ty === "tech") stage("h3", w => w.demo(b.tok, true, 0.7));
 }
 /* --- komut havuzu --- */
-const knows = c => !st.prof.only || toks(c).every(t => st.prof.learned.includes(t));
+const knowsAll = c => toks(c).every(t => st.prof.learned.includes(t));
+const knows = c => !st.prof.only || knowsAll(c);
+const kindMap = (c, kind) => kind === "pads" ? c.map(s => toks(s).filter(t => !FOOT.includes(t)).join("-")).filter(s => toks(s).some(t => STRIKE.includes(t))) : kind === "you" ? c.map(s => toks(s).filter(t => STRIKE.includes(t)).join("-")).filter(Boolean) : c;
+const uniq = a => [...new Set(a)];
+function applySh(c, kind) { if (!R.sh) return c; const s = c.filter(x => !toks(x).some(t => LEAD.includes(t))); return s.length > 1 ? s : ["2", "2-roll-2", "slip-2", "4-2", "2-4"].filter(knowsAll).filter(x => kind !== "you" || !/roll|slip/.test(x)); }
+const DEFS = { "1": [["slip", "SAĞA SLIP", "sağa slip"], ["parry", "PARRY", "parry"], ["pull", "GERİ ÇEKİL", "çekil"]], "2": [["islip", "SOLA SLIP", "sola slip"], ["pull", "GERİ ÇEKİL", "çekil"], ["slip", "SLIP", "slip"]], "3": [["roll", "EĞİL", "eğil"], ["block", "BLOK", "blok"]], "4": [["roll", "EĞİL", "eğil"], ["block", "BLOK", "blok"]], "5": [["pull", "GERİ ÇEKİL", "çekil"], ["block", "BLOK", "blok"]], "6": [["pull", "GERİ ÇEKİL", "çekil"], ["block", "BLOK", "blok"]] };
+const defOf = tok => (DEFS[tok] || []).find(d => st.prof.learned.includes(d[0]));
+const strictOn = cfg => cfg.guide || st.prof.only;
+function oppSets(cfg, theme) {
+  const lvl = [3, 6, 9, 12].find(x => x >= cfg.pool) || 12; let sets = (theme && THEMES[theme] && THEMES[theme].opp) || OPP_SETS[lvl];
+  if (strictOn(cfg)) sets = sets.filter(set => set.every(defOf));
+  return sets;
+}
+function themePool(id, kind, phase) { const th = THEMES[id]; if (!th || !th.p) return null; return kindMap(th.p[phase].filter(knowsAll), kind); }
+function availThemes(cfg, kind) {
+  const ids = (cfg.themes && cfg.themes.length ? cfg.themes : THEME_ORDER).filter(id => THEMES[id]);
+  const ok = ids.filter(id => {
+    if (id === "serbest") return true;
+    if (kind === "spar") return oppSets(cfg, id).length > 0 || (themePool(id, "you", 1) || []).length > 0;
+    return [0, 1, 2].some(ph => (themePool(id, kind, ph) || []).length);
+  });
+  return ok.length ? ok : ["serbest"];
+}
+function guidedPool(b, kind, t) {
+  const cfg = b.cfg, id = b.theme, ph = t / b.dur < 0.25 ? 0 : t / b.dur < 0.8 ? 1 : 2;
+  if (R.phase !== ph) { if (R.phase >= 0 && !R.burst) speak(PHASE_SAY[ph]); R.phase = ph; }
+  let c = themePool(id, kind, ph);
+  if (c && !c.length) c = themePool(id, kind, 1) || [];
+  if (!c || !c.length) { c = kindMap(CB.filter(x => x[1] <= cfg.pool).map(x => x[0]).filter(knowsAll), kind); }
+  const mine = kindMap(st.combos.map(x => x.c), kind);
+  if (cfg.mine === "only" && mine.length) c = mine; else if (cfg.mine === "mix" && (id === "serbest" || ph === 1)) c = c.concat(mine);
+  c = applySh(c, kind); if (!c.length) c = knowsAll("1-2") ? ["1-2"] : ["2"];
+  return c;
+}
+const pickPool = (b, kind, t) => b.cfg.guide ? guidedPool(b, kind, t) : poolOf(b.cfg, kind);
+const moveLvl = (b) => ({ low: 1, mid: 2, high: 3 }[b.cfg.move || "mid"] || 2) * ((b.cfg.guide && b.theme && THEMES[b.theme].move) || 1);
+const themeK = b => (b.cfg.guide && b.theme && THEMES[b.theme].slow ? 1.3 : 1) * (R.emph ? 1.15 : 1) * (b.cfg.guide && R.phase === 2 ? 0.82 : 1);
+function themeCue(b) { const th = b.cfg.guide && b.theme && THEMES[b.theme]; const em = { solgard: ["Sol el yüzüne geri!", "Jabdan sonra el hemen yüze"], "sağgard": ["Sağ el çenede!", "Arka el yüzde kalsın"], omuz: ["Omuzlar aşağı, gevşe", "Nefes ver, omuzları bırak"] }[R.emph]; if (em && Math.random() < 0.6) return rnd(em); if (th && th.cues.length && Math.random() < 0.5) return rnd(th.cues); return null; }
 function poolOf(cfg, kind) {
   let c = CB.filter(x => x[1] <= cfg.pool).map(x => x[0]).filter(knows);
   if (!c.length) c = CB.map(x => x[0]).filter(knows);
@@ -366,17 +445,35 @@ function poolOf(cfg, kind) {
   if (kind === "pads") c = c.map(s => toks(s).filter(t => !FOOT.includes(t)).join("-")).filter(s => toks(s).some(t => STRIKE.includes(t)));
   if (kind === "you") c = c.map(s => toks(s).filter(t => STRIKE.includes(t)).join("-")).filter(Boolean);
   if (cfg.mine !== "only" && kind === "shadow" && Math.random() < 0.3) { const rec = CB.filter(x => x[1] <= cfg.pool && x[1] > cfg.pool - 3).map(x => x[0]).filter(knows); if (rec.length) c = rec; }
-  if (R.sh) { const s = c.filter(x => !toks(x).some(t => LEAD.includes(t))); c = s.length > 1 ? s : ["2", "2-roll-2", "slip-2", "4-2", "2-4"].filter(x => kind !== "you" || !/roll|slip/.test(x)); }
-  if (!c.length) c = ["1-2"];
+  c = applySh(c, kind); if (!c.length) c = ["1-2"];
   return c;
 }
 const tempoK = cfg => cfg.tempo === "var" ? 0.75 + Math.random() * 0.6 : ({ slow: 1.3, mid: 1, fast: 0.75 }[cfg.tempo] || 1);
-function coachLine(cfg) { if (R.ci % [0, 9, 5, 3][cfg.talk || 2] !== 0) return null; const n = st.prof.name && Math.random() < 0.4 ? st.prof.name + ", " : ""; const l = R.sh ? "omuz gevşek, ayaklarını oynat" : (Math.random() < 0.5 ? rnd(PRAISE) : rnd(CUES)); return n ? n + l.charAt(0).toLocaleLowerCase("tr") + l.slice(1) : l.charAt(0).toLocaleUpperCase("tr") + l.slice(1); }
+function coachLine(cfg, b) { if (R.ci % [0, 9, 5, 3][cfg.talk || 2] !== 0) return null; const tc = b && themeCue(b); if (tc) return tc; const n = st.prof.name && Math.random() < 0.4 ? st.prof.name + ", " : ""; const l = R.sh ? "omuz gevşek, ayaklarını oynat" : (Math.random() < 0.5 ? rnd(PRAISE) : rnd(CUES)); return n ? n + l.charAt(0).toLocaleLowerCase("tr") + l.slice(1) : l.charAt(0).toLocaleUpperCase("tr") + l.slice(1); }
 /* --- rakip --- */
-function idleOpp(w) { const dx = (Math.random() - 0.5) * 0.24; w.Bc.playFrames([F(O(dip(G, 0.03), { gp: [dx, 0] }), 380), F(O(G, { gp: [dx, 0] }), 380)], true, 1, 0); }
-function oppAttack(w, cfg, t) {
-  const lvl = [3, 6, 9, 12].find(x => x >= cfg.pool) || 12, set = rnd(OPP_SETS[lvl]), tele = { easy: 650, mid: 420, hard: 260 }[cfg.diff] || 420;
-  const feint = cfg.diff === "hard" && Math.random() < 0.2, f = [];
+const opPos = (dx = 0) => [((R && R.op) || [0, 0])[0] + dx, ((R && R.op) || [0, 0])[1]];
+function idleOpp(w) { const dx = (Math.random() - 0.5) * 0.2, g = opPos(dx); w.Bc.playFrames([F(O(dip(G, 0.03), { gp: g }), 380), F(O(G, { gp: g }), 380)], true, 1, 0); }
+const shiftF = (f, g) => f.map(x => F(O(x.p, { gp: [x.p.gp[0] + g[0], x.p.gp[1] + g[1]] }), x.d, x.h, x.ev));
+function oppMove(w, b) {
+  const op = R.op, opts = [];
+  if (op[1] < 0.25) opts.push("press"); if (op[1] > -0.35) opts.push("retreat"); opts.push("side");
+  const far = Math.abs(op[0]) > 0.25 || Math.abs(op[1]) > 0.3, kind = far && Math.random() < 0.6 ? "center" : rnd(opts);
+  const nw = kind === "press" ? [op[0], Math.min(0.3, op[1] + 0.3)] : kind === "retreat" ? [op[0], Math.max(-0.4, op[1] - 0.32)] : kind === "side" ? [Math.abs(op[0]) > 0.15 ? 0 : (Math.random() < 0.5 ? -0.3 : 0.3), op[1]] : [0, 0];
+  const f = [F(O(G, { gp: [(op[0] + nw[0]) / 2, (op[1] + nw[1]) / 2], lf: [0.13, 0.36] }), 260), F(O(G, { gp: nw }), 300, 150)];
+  R.op = nw;
+  if (kind === "press") { const can = defOf("1"); hint("GERİ ÇIK · PİVOT", "", 1300); speak("Baskı! Geri çık ya da pivot.", null, true); if (can) { P3["1"].f.forEach((x, k) => f.push(F(O(x.p, { gw: [1, 0], gp: nw }), x.d * 1.15, x.h, k === P3["1"].f.length - 1 ? "whoosh" : null))); f.push(F(O(G, { gp: nw }), 240)); } }
+  else if (kind === "retreat") { const c = ["step-1-2", "step-1", "1-2"].find(knowsAll) || "1"; hint("GİR: " + toks(c).map(lab).join("-"), "ctr", 1400); speak("Geri çekildi. Gir! " + say(c), null, true); showCall(c); R.combos++; useC(c); }
+  else if (kind === "side") { hint("AÇI AL", "ctr", 1200); speak("Yana kaydı, açını al.", null, true); }
+  else { speak("Ortaya.", null, true); }
+  f.push(F(O(dip(G, 0.03), { gp: nw }), 380)); f.push(F(O(G, { gp: nw }), 380));
+  w.Bc.playFrames(f, false, 1, 0, e => { if (e === "whoosh") { sfx.whoosh(); if (R && R.cm.on) cam.watchReaction("spar"); } });
+  return f.reduce((a, x) => a + x.d + x.h, 0) / 1000;
+}
+function oppAttack(w, cfg, t, b) {
+  const sets = oppSets(cfg, b && b.cfg.guide ? b.theme : null); if (!sets.length) return oppYourTurn(w, cfg, b);
+  const set = rnd(sets), tele = ({ easy: 650, mid: 420, hard: 260 }[cfg.diff] || 420) * (R.spK || 1);
+  const feint = cfg.diff === "hard" && Math.random() < 0.2, f0 = [];
+  const f = f0;
   set.forEach((tok, j) => {
     const L = ["1", "3", "5"].includes(tok), gw = L ? [1, 0] : [0, 1];
     f.push(F(O(G, { gw }), j ? tele * 0.55 : tele, 0, j === 0 ? null : null));
@@ -386,9 +483,10 @@ function oppAttack(w, cfg, t) {
   f.push(F(G, 200, 0, cfg.counters && !feint ? "ctr" : null));
   if (cfg.counters && !feint) f.push(F(O(G, { lh: [0.16, 1.3, 0.34], rh: [-0.16, 1.28, 0.3] }), 220, 1100));
   f.push(F(G, 260));
-  const dx = (Math.random() - 0.5) * 0.24; f.push(F(O(dip(G, 0.03), { gp: [dx, 0] }), 380)); f.push(F(O(G, { gp: [dx, 0] }), 380));
-  const first = OPP[set[0]], defTxt = set.map(x => OPP[x].def).filter((v, i, a) => a.indexOf(v) === i).join(" → ");
-  const ctrs = OPP[set[set.length - 1]].ctr.filter(knows), ctr = ctrs.length ? rnd(ctrs) : (knows("2") ? "2" : "1");
+  f.push(F(dip(G, 0.03), 380)); f.push(F(G, 380));
+  const ff = shiftF(f, R.op); f.length = 0; ff.forEach(x => f.push(x));
+  const df = set.map(x => defOf(x) || [null, OPP[x].def, OPP[x].say]), first = { say: df[0][2] }, defTxt = df.map(d => d[1]).filter((v, i, a) => a.indexOf(v) === i).join(" → ");
+  const ctrs = OPP[set[set.length - 1]].ctr.filter(strictOn(cfg) ? knowsAll : knows), ctr = ctrs.length ? rnd(ctrs) : (knows("2") ? "2" : "1");
   w.Bc.playFrames(f, false, 1, 0, e => {
     if (e === "whoosh") sfx.whoosh();
     if (e === "ctr") { R.ctrs++; cnt(); showCall(ctr); hint("KARŞILIK: " + toks(ctr).map(x => lab(x)).join("-"), "ctr", 1100); speak(say(ctr), null, true); }
@@ -399,9 +497,9 @@ function oppAttack(w, cfg, t) {
   if (feint) setTimeout(() => R && hint("ALDATMA", "ctr", 700), tele + 150);
   return f.reduce((a, x) => a + x.d + x.h, 0) / 1000;
 }
-function oppYourTurn(w, cfg) {
-  const c = rnd(poolOf(cfg, "you")); showCall(c); if (cfg.voice) speak(say(c), null, true); else hint(toks(c).map(x => lab(x)).join("-"), "ctr", 1200);
-  const d = 1200 + toks(c).length * 420; w.Bc.playFrames([F(shell(), 220, d), F(G, 300)], false); R.combos++; useC(c); cnt();
+function oppYourTurn(w, cfg, b) {
+  const c = rnd(b ? pickPool(b, "you", segT()) : poolOf(cfg, "you")); showCall(c); if (cfg.voice) speak(say(c), null, true); else hint(toks(c).map(x => lab(x)).join("-"), "ctr", 1200);
+  const d = 1200 + toks(c).length * 420; w.Bc.playFrames(shiftF([F(shell(), 220, d), F(G, 300)], R.op), false); R.combos++; useC(c); cnt();
   return (d + 520) / 1000;
 }
 /* --- ana döngü --- */
@@ -417,20 +515,25 @@ function loop() {
     if (t >= R.nc && rem > 2) {
       R.ci++; const bk = R.burst ? 0.62 : 1;
       if (b.mode === "shadow") {
-        const cl = coachLine(cfg); if (cl && !R.ten) { speak(cl); R.nc = t + 2.6; }
-        else { const c = rnd(poolOf(cfg, "shadow")); showCall(c); if (cfg.voice) speak(say(c), null, true); else hint(toks(c).map(x => lab(x)).join("-"), "ctr", 1200); stage("h3", w => w.demo(c, false, 1)); R.combos++; useC(c); cnt(); R.nc = t + ([5.2][0] + toks(c).length * 0.6) * st.pace * tempoK(cfg) * bk * (R.sh ? 1.2 : 1) * (0.85 + Math.random() * 0.3); }
+        const cl = coachLine(cfg, b); if (cl && !R.ten) { speak(cl); R.nc = t + 2.6; }
+        else { let c = rnd(pickPool(b, "shadow", t)); const feet = FOOT.filter(x => st.prof.learned.includes(x)), ml = moveLvl(b);
+          if (feet.length && !FOOT.includes(toks(c).slice(-1)[0]) && (!cfg.guide || R.phase >= 1) && Math.random() < [0, 0.15, 0.3, 0.45, 0.55, 0.6, 0.65][Math.min(6, ml)]) c = c + "-" + rnd(feet); showCall(c); if (cfg.voice) speak(say(c), null, true); else hint(toks(c).map(x => lab(x)).join("-"), "ctr", 1200); stage("h3", w => w.demo(c, false, 1)); R.combos++; useC(c); cnt(); R.nc = t + ([5.2][0] + toks(c).length * 0.6) * st.pace * tempoK(cfg) * themeK(b) * bk * (R.sh ? 1.2 : 1) * (0.85 + Math.random() * 0.3); }
       } else if (b.mode === "pads") {
-        const cl = coachLine(cfg); if (cl && !R.ten && !R.burst) { speak(cl); R.nc = t + 2.4; }
+        const cl = coachLine(cfg, b), ml = moveLvl(b), mp = [0, 0.12, 0.22, 0.32, 0.4, 0.45, 0.5][Math.min(6, ml)];
+        if (cl && !R.ten && !R.burst) { speak(cl); R.nc = t + 2.4; }
+        else if ((!cfg.guide || R.phase >= 1) && t - R.lastMove > 7 && rem > 8 && Math.random() < mp) { R.lastMove = t; let d = 1.5; stage("h3", w => d = padMove(w)); R.nc = t + d + 0.6; }
         else {
-          const c = rnd(poolOf(cfg, "pads")), T = padT(cfg.tempo === "var" ? rnd(["slow", "mid", "fast"]) : cfg.tempo) * (R.burst ? 0.8 : 1);
+          let pool = pickPool(b, "pads", t); if (R.forceIn) { const j = pool.filter(x => x.startsWith("1")); if (j.length) pool = j; R.forceIn = false; }
+          const c = rnd(pool), T = padT(cfg.tempo === "var" ? rnd(["slow", "mid", "fast"]) : cfg.tempo) * (R.burst ? 0.8 : 1) * themeK(b);
           showCall(c); if (cfg.voice) speak(say(c), null, true);
-          const fr = padFrames(c, T); let dur = 0; fr.slice(0, -3).forEach(x => dur += x.d + x.h);
+          const fr = padFrames(c, T, R.hp); let dur = 0; fr.slice(0, -3).forEach(x => dur += x.d + x.h);
           stage("h3", w => w.Bc.playFrames(fr, false, 1, 0, e => { if (/^pop/.test(e)) { sfx.pop(); w.Bc.flash(e === "popL" ? "Left" : "Right"); R && (R.hits++, cnt()); } if (e === "whoosh") { sfx.whoosh(); edge(c.includes("roll") || c.includes("block") ? "l" : "r"); } if (e === "tele" && R && R.cm.on) cam.watchReaction("pads"); }));
           R.combos++; useC(c); cnt(); R.nc = t + dur / 1000 + ({ slow: 2.2, mid: 1.6, fast: 1.1, var: 1.5 }[cfg.tempo] || 1.6) * st.pace * bk * (R.sh ? 1.2 : 1) * (0.8 + Math.random() * 0.4);
         }
       } else if (b.mode === "spar") {
-        let dur = 2; stage("h3", w => { dur = Math.random() < (cfg.counters ? 0.62 : 0.75) ? oppAttack(w, cfg, t) : oppYourTurn(w, cfg); });
-        R.nc = t + dur + ({ easy: 2.4, mid: 1.8, hard: 1.2 }[cfg.diff] || 1.8) * st.pace * bk * tempoK(cfg) * (0.8 + Math.random() * 0.4);
+        const ml = moveLvl(b), mp = [0, 0.1, 0.18, 0.28, 0.36, 0.42, 0.48][Math.min(6, ml)];
+        let dur = 2; stage("h3", w => { if (cfg.guide) guidedPool(b, "you", t); dur = (Math.random() < mp && rem > 6) ? oppMove(w, b) : Math.random() < (cfg.counters ? 0.62 : 0.75) ? oppAttack(w, cfg, t, b) : oppYourTurn(w, cfg, b); });
+        R.nc = t + dur + ({ easy: 2.4, mid: 1.8, hard: 1.2 }[cfg.diff] || 1.8) * st.pace * bk * tempoK(cfg) * themeK(b) * (0.8 + Math.random() * 0.4);
       }
     }
   } else if (b.ty === "ex") {
@@ -451,7 +554,7 @@ function finish(partial) {
   endRec = { v: 5, t: rec.t0, type: meta.type, title: meta.title, key: meta.key || null, kind: meta.kind || null, warm: meta.warm || null, warmName: meta.warm && WP[meta.warm] ? WP[meta.warm].n : null,
     planned: rec.planned, active: Math.round(rec.active), roundSec: Math.round(rec.roundSec), rounds: rec.rounds, rd: rec.rounds.filter(r => r.act >= r.dur * 0.9).length, rdPlan: R.b.filter(x => x.ty === "round").length,
     hits: R.hits, combos: R.combos, atks: R.atks, ctrs: R.ctrs, skipped: rec.skipped, pauses: rec.pauses, shAt: rec.shAt, cu: rec.cu, partial: !!partial,
-    cam: R.cm.on ? { seen: R.cm.frames ? Math.round(R.cm.seenF / R.cm.frames * 100) : 0, dropsL: R.cm.dropsL, dropsR: R.cm.dropsR, dropSecL: Math.round(R.cm.dropMsL / 1000), dropSecR: Math.round(R.cm.dropMsR / 1000), shrugs: R.cm.shrugs, reacts: R.cm.reacts, misses: R.cm.misses, monSec: Math.round(R.cm.monSec) } : null };
+    cam: R.cm.on ? { move: R.cm.monSec > 20 ? +((cam.moveAcc - (R.cm.mv0 || 0)) / (R.cm.monSec / 60)).toFixed(1) : null, statics: R.cm.statics || 0, edges: R.cm.edges || 0, seen: R.cm.frames ? Math.round(R.cm.seenF / R.cm.frames * 100) : 0, dropsL: R.cm.dropsL, dropsR: R.cm.dropsR, dropSecL: Math.round(R.cm.dropMsL / 1000), dropSecR: Math.round(R.cm.dropMsR / 1000), shrugs: R.cm.shrugs, reacts: R.cm.reacts, misses: R.cm.misses, monSec: Math.round(R.cm.monSec) } : null };
   stop(); if (!partial) speak("Bitti. " + (st.prof.name ? "Harika iş çıkardın " + st.prof.name + "." : "Harika iş çıkardın."));
   const sum = [Math.round(endRec.active / 60) + " dakika", warm ? "" : endRec.rd + "/" + endRec.rdPlan + " raund", endRec.hits ? endRec.hits + " lapa" : "", endRec.atks ? endRec.atks + " saldırı karşılandı" : ""].filter(Boolean).join(" · ");
   $("e-t").textContent = partial ? "Yarım kaldı" : "Bitti"; $("e-sub").textContent = meta.title + " · " + sum;
@@ -493,7 +596,7 @@ const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) 
 function camSummary(c) {
   const rd = avg(c.reacts || []), min = Math.max(1, c.monSec / 60);
   return `<div class="camsum"><b>Kamera</b><span>Gard düşmesi: sol ${c.dropsL}, sağ ${c.dropsR} (dakikada ${((c.dropsL + c.dropsR) / min).toFixed(1)})</span>` +
-    `<span>Omuz kalkması: ${c.shrugs}</span>` + (c.reacts && c.reacts.length ? `<span>Ortalama tepki: ${rd} ms (en hızlı ${Math.min(...c.reacts)} ms) · tepki yok: ${c.misses}</span>` : "") +
+    `<span>Omuz kalkması: ${c.shrugs}</span>` + (c.move != null ? `<span>Hareket: dakikada ${c.move} omuz genişliği · "ayakların durdu" uyarısı ${c.statics}</span>` : "") + (c.reacts && c.reacts.length ? `<span>Ortalama tepki: ${rd} ms (en hızlı ${Math.min(...c.reacts)} ms) · tepki yok: ${c.misses}</span>` : "") +
     (c.seen < 80 ? `<span class="warn">Kamera seni sürenin sadece %${c.seen}'inde gördü; sonuçlar eksik olabilir.</span>` : "") + `</div>`;
 }
 let lastSay = { L: 0, R: 0, sh: 0 };
@@ -509,6 +612,7 @@ function camEvent(type, d) {
   if (type === "shrug" && live) { R.cm.shrugs++; if (st.cam.vShrug && now - lastSay.sh > 12000) { lastSay.sh = now; speak("Omuzlar aşağı, gevşe", null, true); } }
   if (type === "react" && live) { R.cm.reacts.push(d.ms); $("r-react").textContent = `Tepki ${d.ms} ms`; $("r-react").classList.add("on"); setTimeout(() => $("r-react").classList.remove("on"), 1400); }
   if (type === "noreact" && live) R.cm.misses++;
+  if (type === "edge" && live) { R.cm.edges = (R.cm.edges || 0) + 1; if (now - (lastSay.edge || 0) > 8000) { lastSay.edge = now; speak("Ortaya dön, kadrajda kal.", null, true); } }
 }
 function camInd() { const c = $("r-cam"); c.querySelector(".gl").classList.toggle("bad", cam.state.dropL); c.querySelector(".gr").classList.toggle("bad", cam.state.dropR); }
 async function camStartRun() {
@@ -516,7 +620,12 @@ async function camStartRun() {
     cam.calib = st.cam.calib; cam.swap = !!st.cam.swap; await cam.start(st.cam.dev); if (!R) { cam.stop(); return; }
     R.cm.on = true; const off = cam.onEvent(camEvent); const cv = $("r-pip"); const det = st.cam.pip ? cam.attach(cv) : () => { };
     $("r-cam").hidden = false; cv.hidden = !st.cam.pip; R.camOff = () => { off(); det(); $("r-cam").hidden = true; cv.hidden = true; };
-    R.camT = setInterval(() => { if (!R) return; const b = R.b[R.i]; if (b && b.ty === "round" && R.ph === "work" && !R.paused) { R.cm.frames++; if (cam.state.seen) { R.cm.seenF++; R.cm.monSec += 0.5; } camInd(); } }, 500);
+    R.cm.mvHist = [];
+    R.camT = setInterval(() => { if (!R) return; const b = R.b[R.i]; if (b && b.ty === "round" && R.ph === "work" && !R.paused) { R.cm.frames++; if (cam.state.seen) { R.cm.seenF++; R.cm.monSec += 0.5; } camInd();
+      const now = performance.now(), h = R.cm.mvHist; h.push([now, cam.moveAcc]); while (h.length && now - h[0][0] > 15000) h.shift();
+      if (cam.state.seen && segT() > 20 && h.length > 25 && h[h.length - 1][1] - h[0][1] < 0.8 && now - (lastSay.st || 0) > 20000) { lastSay.st = now; R.cm.statics = (R.cm.statics || 0) + 1; speak("Ayakların durdu, hareket et!", null, true); }
+    } }, 500);
+    R.cm.mv0 = cam.moveAcc;
     if (!st.cam.calib) setTimeout(() => R && speak("Kamera kalibre edilmemiş. Gard uyarıları varsayılan ayarla çalışacak; omuz takibi için ayarlardan kalibrasyon yap."), 1500);
   } catch (e) { console.error(e); if (R) { $("r-say").textContent = "Kamera açılamadı: " + (e.name === "NotAllowedError" ? "izin verilmedi" : e.message || e.name); } }
 }

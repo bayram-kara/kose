@@ -10,6 +10,7 @@ export class Cam {
     this.listeners = new Set(); this.overlays = new Set();
     this.calib = null; this.state = { seen: false, dropL: false, dropR: false, shrug: false };
     this._dropSince = { L: 0, R: 0 }; this._shrugSince = 0; this._watch = null; this._hist = [];
+    this.moveAcc = 0; this._lastC = null; this._edgeSince = 0; this.state.edge = false;
     this.thr = { drop: 0.6, dropHold: 700, shrug: 0.72, shrugHold: 1500, react: 0.28, reactMax: 1500 };
   }
   async devices() { try { const d = await navigator.mediaDevices.enumerateDevices(); return d.filter(x => x.kind === "videoinput"); } catch (e) { return []; } }
@@ -68,6 +69,13 @@ export class Cam {
     };
     this.m = m;
     if (this._calibrating) this._calibrating.push(m);
+    // hareket: omuz ortası, omuz genişliği cinsinden; küçük titremeler sayılmaz
+    const cx = (P[IDX.lSh].x + P[IDX.rSh].x) / 2, cy = (P[IDX.lSh].y + P[IDX.rSh].y) / 2;
+    if (this._lastC) { const d = Math.hypot(cx - this._lastC[0], cy - this._lastC[1]) / sw; if (d > 0.03 && d < 1.5) this.moveAcc += d; }
+    this._lastC = [cx, cy];
+    const fx = cx / W, outE = fx < 0.14 || fx > 0.86;
+    if (outE) { if (!this._edgeSince) this._edgeSince = now; if (!this.state.edge && now - this._edgeSince > 800) { this.state.edge = true; this.emit("edge", { x: fx }); } }
+    else if (fx > 0.2 && fx < 0.8) { if (this.state.edge) { this.state.edge = false; this.emit("edgeEnd", {}); } this._edgeSince = 0; }
     // baş geçmişi (tepki ölçümü için)
     this._hist.push({ t: now, x: nose.x, y: nose.y, sw }); while (this._hist.length && now - this._hist[0].t > 1500) this._hist.shift();
     // gard

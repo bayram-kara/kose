@@ -71,6 +71,7 @@ h2.sec{font-size:26px;margin:0 0 6px}.secd{color:var(--mute);margin:0 0 14px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{padding:9px 14px;border-radius:999px;background:var(--panel);font-weight:600;min-height:44px}
 .chip[aria-pressed=true]{background:var(--red);color:#fff}
+.chip.na{opacity:.45}.chip small{font-weight:400;font-size:12px;margin-left:4px}
 .chip .n{color:var(--red);margin-right:4px}.chip[aria-pressed=true] .n{color:#fff}
 .grp{width:100%;font-size:13px;color:var(--mute);margin-top:8px}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(18px,3vw,40px);align-items:start}
@@ -173,7 +174,7 @@ details{background:var(--panel);border-radius:14px;padding:12px 16px;margin-bott
 #run.tv .rc:hover,#run.tv .rc:focus-within,#run.tv .rc:active{opacity:1}
 #run.tv .rc button{min-height:38px;padding:6px 12px;font-size:14px;border-radius:10px}
 #run.tv .rc .main{min-width:96px}
-#run.tv .vbar{bottom:clamp(54px,11vh,96px);left:auto;right:12px;justify-content:flex-end}
+#run.tv .vbar{bottom:clamp(54px,11vh,96px);left:50%;right:auto;transform:translateX(-50%);justify-content:center;width:max-content}
 #run.tv .hint3{display:none!important}#run.tv .vbar button{font-size:12px;padding:4px 9px;min-height:30px}
 #end{position:fixed;inset:0;z-index:40;background:#000b;display:grid;place-items:center;padding:16px}
 .eb{background:var(--bg);border-radius:22px;padding:26px;max-width:440px;width:100%;text-align:center}
@@ -343,6 +344,8 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
   <div class="row" style="justify-content:space-between"><h2 id="ed-t">Mod</h2><button class="x" id="ed-x" aria-label="Kapat" style="background:var(--panel)">×</button></div>
   <div class="fld"><label for="ed-name">Mod adı</label><input type="text" id="ed-name" maxlength="40"></div>
   <div class="fld"><span class="lb">Tür</span><div class="seg" id="ed-kind"></div><div class="hlp" id="ed-kindd"></div></div>
+  <div class="fld"><span class="lb">Akış</span><div class="seg" id="ed-flow"></div><div class="hlp" id="ed-flowd"></div></div>
+  <div class="fld" id="ed-thf"><span class="lb">Konular</span><div class="chips" id="ed-themes"></div><div class="hlp" id="ed-thd"></div></div>
   <div class="fld"><span class="lb">Raund sayısı</span><div class="stp"><button data-d="-1" aria-label="Azalt">−</button><b id="ed-rounds"></b><button data-d="1" aria-label="Arttır">+</button></div></div>
   <div class="fld"><span class="lb">Raund süresi</span><div class="seg" id="ed-len"></div></div>
   <div class="fld"><span class="lb">Dinlenme</span><div class="seg" id="ed-rest"></div></div>
@@ -350,6 +353,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
   <div class="fld"><span class="lb">Komut havuzu</span><div class="seg" id="ed-pool"></div></div>
   <div class="fld"><span class="lb">Kombinasyonlarım</span><div class="seg" id="ed-mine"></div><div class="hlp" id="ed-mined"></div></div>
   <div class="fld"><span class="lb">Tempo</span><div class="seg" id="ed-tempo"></div></div>
+  <div class="fld"><span class="lb">Hareket</span><div class="seg" id="ed-move"></div><div class="hlp">Gölgede kombinasyonların arasına ayak komutları; lapacı ve rakip yer değiştirir, sen takip edersin. Evde 2×2 metre boş alan yeterli.</div></div>
   <div class="fld" id="ed-sparf"><span class="lb">Rakip zorluğu</span><div class="seg" id="ed-diff"></div><div class="hlp">Kolay: yumruktan önce uzun uyarı ve ekranda ipucu. Zor: kısa uyarı, ipucu yok, arada aldatma.</div></div>
   <div class="fld"><span class="lb">Antrenör</span><div class="seg" id="ed-talk"></div></div>
   <div id="ed-tg"></div>
