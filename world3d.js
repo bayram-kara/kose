@@ -172,11 +172,30 @@ class Character {
     const bm = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.6 });
     this.band = [0, 1].map(() => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 8), bm); c.visible = false; world.scene.add(c); return c; });
     this.anchor = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 12), new THREE.MeshStandardMaterial({ color: 0x777b84 })); this.anchor.position.set(0, 0.9, 1.35); this.anchor.visible = false; world.scene.add(this.anchor);
+    // kafalık ve şort (boksör görünümü, yüz yönü belli olsun)
+    const team = new THREE.MeshStandardMaterial({ color: opt.kit, roughness: 0.45 });
+    const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.6 });
+    const faceM = new THREE.MeshStandardMaterial({ color: 0xd9cbb8, roughness: 0.8 }), dark = new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.5 });
+    const hg = new THREE.Group();
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.122, 32, 24), team); shell.scale.set(1, 1.08, 1.04); shell.castShadow = true;
+    const face = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), faceM); face.scale.set(0.066, 0.085, 0.03); face.position.set(0, -0.012, 0.112);
+    const brow = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.15, 16), team); brow.rotation.z = Math.PI / 2; brow.position.set(0, 0.07, 0.1);
+    const cheekL = new THREE.Mesh(new THREE.SphereGeometry(0.048, 16, 12), team); cheekL.position.set(0.07, -0.035, 0.075);
+    const cheekR = cheekL.clone(); cheekR.position.x = -0.07;
+    const eyeG = new THREE.SphereGeometry(0.011, 10, 8), eyeL = new THREE.Mesh(eyeG, dark), eyeR = new THREE.Mesh(eyeG, dark); eyeL.position.set(0.026, 0.012, 0.139); eyeR.position.set(-0.026, 0.012, 0.139);
+    const chin = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 8, 24, Math.PI), team); chin.rotation.set(Math.PI / 2, 0, 0); chin.position.set(0, -0.085, 0.05);
+    hg.add(shell, face, brow, cheekL, cheekR, eyeL, eyeR, chin); world.scene.add(hg);
+    const waist = new THREE.Group();
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.22, 28), team); sh.castShadow = true;
+    const bandW = new THREE.Mesh(new THREE.CylinderGeometry(0.162, 0.162, 0.038, 28), white); bandW.position.y = 0.105;
+    waist.add(sh, bandW); world.scene.add(waist);
+    const thighs = [0, 1].map(() => { const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.09, 0.2, 18), team); m.castShadow = true; const st = new THREE.Mesh(new THREE.CylinderGeometry(0.091, 0.091, 0.02, 18), white); st.position.y = -0.095; g.add(m, st); world.scene.add(g); return g; });
+    this.kit = { hg, waist, thighs };
     this.setGear(opt.gear || "gloves");
     this.apply(this.p);
   }
   setGear(g) { this.gearMode = g; }
-  set visible(v) { this.m.visible = v; this._vis = v; for (const s in this.gear) { this.gear[s].glove.visible = v; this.gear[s].mitt.visible = v; } if (!v) { this.rope.visible = false; this.band.forEach(b => b.visible = false); this.anchor.visible = false; } }
+  set visible(v) { this.m.visible = v; this._vis = v; if (this.kit) { this.kit.hg.visible = v; this.kit.waist.visible = v; this.kit.thighs.forEach(t => t.visible = v); } for (const s in this.gear) { this.gear[s].glove.visible = v; this.gear[s].mitt.visible = v; } if (!v) { this.rope.visible = false; this.band.forEach(b => b.visible = false); this.anchor.visible = false; } }
   get visible() { return this._vis !== false; }
   flash(side) { this.gear[side].flash = 1; }
   /* animasyon */
@@ -260,6 +279,15 @@ class Character {
       }
       this["w" + s] = w;
     }
+    // kafalık ve şort
+    if (this.kit && this.visible) {
+      const hq = B.Head.getWorldQuaternion(new THREE.Quaternion()), qd = hq.multiply(this.restW.Head.clone().invert());
+      this.kit.hg.quaternion.copy(qd); this.kit.hg.position.copy(B.Head.getWorldPosition(V())).add(V(0, 0.085, 0.012).applyQuaternion(qd));
+      const pq = B.Hips.getWorldQuaternion(new THREE.Quaternion()), pd = pq.multiply(this.restW.Hips.clone().invert());
+      this.kit.waist.quaternion.copy(pd); this.kit.waist.position.copy(B.Hips.getWorldPosition(V())).add(V(0, 0.0, -0.008).applyQuaternion(pd));
+      [["Left", 0], ["Right", 1]].forEach(([sd, i]) => { const a = B[sd + "UpLeg"].getWorldPosition(V()), b = B[sd + "Leg"].getWorldPosition(V()), dir = b.clone().sub(a).normalize(), t = this.kit.thighs[i];
+        t.position.copy(a).addScaledVector(dir, 0.09); t.quaternion.setFromUnitVectors(V(0, -1, 0), dir); });
+    }
     // ip
     const rp = p.rp[0] > 0.5 && this.visible;
     this.rope.visible = rp;
@@ -290,8 +318,9 @@ export class World {
     s.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 1.3));
     const dl = new THREE.DirectionalLight(0xffffff, 2.2); dl.position.set(1.8, 4, 2.6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
     Object.assign(dl.shadow.camera, { left: -2, right: 2, top: 2, bottom: -2 }); s.add(dl);
-    const rim = new THREE.DirectionalLight(0xff8899, 0.8); rim.position.set(-2, 2.5, -2.5); s.add(rim);
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(3.4, 48), new THREE.MeshStandardMaterial({ color: 0xe9e4dc, roughness: 0.95 }));
+    const rim = new THREE.DirectionalLight(0xffffff, 1.4); rim.position.set(-2, 2.5, -2.5); s.add(rim);
+    const rim2 = new THREE.DirectionalLight(0xffd6dc, 0.9); rim2.position.set(2.5, 1.8, -2); s.add(rim2);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(3.4, 48), new THREE.MeshStandardMaterial({ color: 0xcfc6ba, roughness: 0.95 }));
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; s.add(floor);
     const post = new THREE.MeshStandardMaterial({ color: 0xc8102e, roughness: 0.5 });
     for (const x of [-2.2, 2.2]) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.5, 16), post); m.position.set(x, 0.75, -1.6); m.castShadow = true; s.add(m); }
@@ -302,8 +331,8 @@ export class World {
     Promise.resolve().then(() => {
       new GLTFLoader().load("./models/boxer.glb", g => {
         const m2 = skClone(g.scene);
-        this.A = new Character(this, g.scene, { body: 0x2c3038, joint: 0x565c68, glove: 0xc8102e, gear: "gloves" });
-        this.Bc = new Character(this, m2, { body: 0x1f2e4d, joint: 0x5a6b8c, glove: 0x1b4b8a, gear: "mitts", base: HG });
+        this.A = new Character(this, g.scene, { body: 0x474d58, joint: 0x7d8594, glove: 0xc8102e, kit: 0xc8102e, gear: "gloves" });
+        this.Bc = new Character(this, m2, { body: 0x34466b, joint: 0x7f92b5, glove: 0x1b4b8a, kit: 0x1b4b8a, gear: "mitts", base: HG });
         this.setMode("demo"); this.ready = true; onReady && onReady();
       }, undefined, e => onFail && onFail(e));
     }).catch(e => onFail && onFail(e));
