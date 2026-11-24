@@ -7,8 +7,10 @@ export const M = {
     st: ["Arka ayakla yere it.", "Ön ayak bir karış ileri kayar.", "Arka ayak aynı mesafeyi takip eder.", "Gard ve baş yüksekliği değişmez."], er: ["Arka ayağı geride bırakıp duruşu uzatmak.", "Zıplamak; ayaklar yere yakın kaymalı."], cu: ["Ön ayak önce", "Arka ayak takip etsin"] },
   back: { n: "Geri adım", k: "Ayak", v: "geri", f: 1,
     st: ["Ön ayakla yere it.", "Arka ayak geri kayar.", "Ön ayak aynı mesafeyi takip eder.", "Ağırlık topuklara düşmez."], er: ["Topuk üstüne geri düşmek.", "Geri giderken gardı indirmek."], cu: ["Arka ayak önce", "Gard kapalı"] },
-  side: { n: "Yan adım", k: "Ayak", v: "yana", f: 1,
-    st: ["Sağa giderken sağ ayak, sola giderken sol ayak önce.", "Diğer ayak aynı mesafeyi takip eder.", "Ayaklar asla çaprazlanmaz, birleşmez."], er: ["Ayakları birleştirmek.", "Bacakları çaprazlamak."], cu: ["Gideceğin yöndeki ayak önce"] },
+  side: { n: "Sola adım", k: "Ayak", v: "sola", f: 1,
+    st: ["Sol ayak (ön ayak) önce sola kayar.", "Sağ ayak aynı mesafeyi takip eder.", "Ortodoks duruşta en güvenli yön budur: rakibin sağ elinden uzaklaşırsın.", "Ayaklar asla çaprazlanmaz, birleşmez."], er: ["Ayakları birleştirmek.", "Önce arka ayağı oynatmak."], cu: ["Sol ayak önce"] },
+  sr: { n: "Sağa adım", k: "Ayak", v: "sağa", f: 1,
+    st: ["Sağ ayak (arka ayak) önce sağa kayar.", "Sol ayak aynı mesafeyi takip eder.", "Rakibin sağ eline doğru gittiğin için gard sıkı kalsın.", "Ayaklar asla çaprazlanmaz, birleşmez."], er: ["Bacakları çaprazlamak.", "Sağa çıkarken sağ eli indirmek."], cu: ["Sağ ayak önce", "Gard sıkı"] },
   pivot: { n: "Pivot", k: "Ayak", v: "pivot", f: 1,
     st: ["Ön ayağın tabanı üzerinde dön.", "Arka ayakla çeyrek tur sola süpür.", "Gard ve çene yerinde kalır.", "Yeni açıdan hemen yumruğa hazır ol."], er: ["Topuk üzerinde dönmek.", "Dönerken eğilip dengeyi kaybetmek."], cu: ["Ön ayak tabanında dön"] },
   "1": { n: "Jab", k: "Yumruk", v: "bir", num: 1,
@@ -36,26 +38,26 @@ export const M = {
     st: ["Gelen jabı sağ avuçla bir avuç kadar yana it.", "Elini uzatma; kısa ve küçük hareket.", "Hemen cross ile karşılık ver."], er: ["Eli yumruğa doğru uzatıp yüzü açmak."], cu: ["Küçük hareket", "Hemen karşılık ver"] },
   block: { n: "Blok", k: "Savunma", v: "blok", d: 1,
     st: ["Eldiveni başına yapıştır, dirsek yukarı.", "Darbeyi kol ve omuzla al.", "Çene aşağı, gözler açık."], er: ["Eldiveni başa yapıştırmadan havada tutmak."], cu: ["Eldiven başa"] },
-  slip: { n: "Dış slip", k: "Savunma", v: "slip", d: 1,
+  slip: { n: "Sağa slip", k: "Savunma", v: "sağa slip", d: 1,
     st: ["Dizlerden hafif sağa ve öne in.", "Baş, ön dizin dışına geçer.", "Belden yana bükme, gözler rakipte.", "Ardından cross çok doğal gelir."], er: ["Belden eğilmek.", "Gereğinden büyük kaçmak."], cu: ["Dizlerden", "Küçük kaçış"] },
-  islip: { n: "İç slip", k: "Savunma", v: "iç slip", d: 1,
+  islip: { n: "Sola slip", k: "Savunma", v: "sola slip", d: 1,
     st: ["Dizlerden hafif sola in.", "Baş, ön dizin içine geçer.", "Ardından jab ya da sol kroşe gelir."], er: ["Gözleri kapatmak."], cu: ["Baş içe"] },
   roll: { n: "Roll (eğil)", k: "Savunma", v: "eğil", d: 1,
     st: ["Dizleri bükerek aşağı in.", "U çizerek bir yandan diğerine geç.", "Yukarı çıkarken gard kapalı, gözler önde.", "Çıktığın taraftan yumruk at."], er: ["Belden eğilip yere bakmak.", "Çok derine inmek."], cu: ["U çiz", "Gözler önde"] },
   pull: { n: "Geri çekilme", k: "Savunma", v: "çekil", d: 1,
     st: ["Ağırlığı arka ayağa ver.", "Başı bir karış geri çek.", "Hemen cross ile geri gel."], er: ["Çeneyi kaldırmak."], cu: ["Çene aşağı"] }
 };
-export const KEYPAD = [["Yumruk", ["1", "2", "3", "4", "5", "6", "b1", "b2", "b3", "b4"]], ["Savunma", ["slip", "islip", "roll", "pull", "parry", "block"]], ["Ayak", ["step", "back", "side", "pivot"]]];
+export const KEYPAD = [["Yumruk", ["1", "2", "3", "4", "5", "6", "b1", "b2", "b3", "b4"]], ["Savunma", ["slip", "islip", "roll", "pull", "parry", "block"]], ["Ayak", ["step", "back", "side", "sr", "pivot"]]];
 export const LEAD = ["1", "b1", "3", "5", "b3"];
 export const STRIKE = ["1", "2", "b1", "b2", "3", "4", "5", "6", "b3", "b4"];
 export const DEF = ["slip", "islip", "roll", "pull", "parry", "block"];
-export const FOOT = ["step", "back", "side", "pivot"];
+export const FOOT = ["step", "back", "side", "sr", "pivot"];
 
 /* Hazır kombinasyonlar: [kombinasyon, açıldığı hafta/seviye] */
 export const CB = [["1", 1], ["1-1", 1], ["2", 1], ["1-2", 1], ["1-1-2", 2], ["step-1", 1], ["1-back", 1], ["b1-1", 2], ["1-2-1", 3], ["b1-2", 3], ["1-b2", 3], ["b1-b2", 3], ["1-b2-2", 6],
   ["slip-2", 4], ["islip-1", 4], ["parry-2", 4], ["1-2-slip-2", 5], ["roll-2", 5], ["pull-2", 5], ["1-2-roll", 5], ["1-pivot", 6], ["roll-2-1", 6], ["2-roll-2", 6],
   ["3", 7], ["1-3", 7], ["1-2-3", 7], ["3-2", 7], ["4", 8], ["5", 8], ["6", 8], ["1-6", 8], ["2-3-2", 9], ["6-3", 9], ["1-2-5-2", 9], ["block-2-3", 9],
-  ["1-2-3-2", 10], ["1-6-3-2", 10], ["slip-2-3-2", 10], ["1-2-roll-2-3", 11], ["parry-2-3-6", 11], ["b1-2-3", 11], ["b3-3", 10], ["1-2-b3", 10], ["2-b3-3-2", 11], ["b4-3-2", 11], ["1-b2-3", 11], ["2-3-roll-3-2", 12], ["b3-b4-3-2", 12], ["1-2-3-6-pivot", 12], ["1-1-2-3-back", 12], ["3-pivot-2", 12]];
+  ["1-2-3-2", 10], ["1-6-3-2", 10], ["slip-2-3-2", 10], ["1-2-roll-2-3", 11], ["parry-2-3-6", 11], ["b1-2-3", 11], ["b3-3", 10], ["1-2-b3", 10], ["2-b3-3-2", 11], ["b4-3-2", 11], ["1-b2-3", 11], ["2-3-roll-3-2", 12], ["b3-b4-3-2", 12], ["1-2-3-6-pivot", 12], ["1-1-2-3-back", 12], ["3-pivot-2", 12], ["1-2-side", 4], ["1-2-sr", 5], ["side-1-2", 6]];
 export const LEVELS = [[3, "Düz yumruklar"], [6, "+ Savunma"], [9, "+ Kroşe, aparkat"], [12, "Hepsi"]];
 
 /* Isınma hareketleri */
@@ -78,7 +80,7 @@ export const WM = {
   band_pa: { n: "Bant pull-apart", say: "Kollar önde düz. Bandı göğsüne doğru iki yana aç, kürek kemiklerini sık.", eq: "Bant" },
   band_fp: { n: "Face pull", say: "Bandı göz hizasında bir yere sabitle. Yüzüne doğru çek, dirsekler yukarıda ve dışarıda.", eq: "Bant" },
   guardhold: { n: "Gard dayanıklılığı", say: "Kollar omuz hizasında önde. Küçük çemberler. Omuzlar aşağıda kalsın.", eq: null },
-  shadow_step: { n: "Gardda adımlar", say: "Gardını al. İleri, geri, sağa, sola adım. Ayaklar çaprazlanmasın.", eq: null, demo: "step-back-side" },
+  shadow_step: { n: "Gardda adımlar", say: "Gardını al. İleri, geri, sağa, sola adım. Ayaklar çaprazlanmasın.", eq: null, demo: "step-back-side-sr" },
   shadow_easy: { n: "Kolay gölge", say: "Yüzde elli hızla jab cross. Sonra yavaş yavaş hızlan.", eq: null, demo: "1-2" }
 };
 export const WP = {
@@ -98,7 +100,7 @@ export const THEMES = {
   duz: { n: "Düz yumruk", d: "Jab ve cross isabeti, hızlı geri dönüş", say: "düz yumruk. Jab ve cross; temiz at, hızlı geri getir.",
     p: [["1", "2", "1-1"], ["1-2", "1-1-2", "1-2-1", "1-b2", "b1-2", "1-2-1-2"], ["1-2", "1-1-2", "1-2-1-2"]], cues: ["Jabdan sonra el yüze", "Kalçadan dön", "Hızlı geri getir"], opp: [["1"], ["2"], ["1", "2"], ["1", "1"]] },
   ayak: { n: "Ayak ve açı", d: "Vur ve yer değiştir; adım, yan çıkış, pivot", say: "ayak ve açı. Vur, sonra yer değiştir. Ayakların hiç durmasın.",
-    p: [["step-1", "1-back", "side-1"], ["1-2-side", "step-1-2-back", "1-2-pivot", "1-1-2-side"], ["1-2-back", "step-1-2", "1-2-side"]], cues: ["Ayaklarını oynat", "Vur ve orada durma", "Açı al"], opp: [["1"], ["2"], ["1", "2"]], move: 2 },
+    p: [["step-1", "1-back", "side-1", "sr-2"], ["1-2-side", "1-2-sr", "step-1-2-back", "1-2-pivot", "1-1-2-side", "side-1-2"], ["1-2-back", "step-1-2", "1-2-side", "1-2-sr"]], cues: ["Ayaklarını oynat", "Vur ve orada durma", "Açı al"], opp: [["1"], ["2"], ["1", "2"]], move: 2 },
   savunma: { n: "Savunma ve karşılık", d: "Slip, roll, parry, çekilme ve hemen ardından karşılık", say: "savunma ve karşılık. Önce savun, hemen karşılık ver.",
     p: [["slip-2", "islip-1", "roll", "parry-2", "pull-2"], ["slip-2-3", "roll-2-1", "parry-2-1", "pull-2-1", "1-2-slip-2"], ["1-2-roll-2", "slip-2-1-2", "2-roll-2"]], cues: ["Savun ve hemen karşılık", "Dizlerden in", "Gözler önde"], opp: null },
   govde: { n: "Kafa ve gövde", d: "Seviye değiştir: kafaya ve gövdeye karışık", say: "kafa ve gövde. Seviye değiştir; dizlerden in, belden eğilme.",
@@ -134,4 +136,4 @@ export const OPP = {
 export const OPP_SETS = { 3: [["1"], ["2"], ["1", "1"]], 6: [["1"], ["2"], ["1", "2"], ["1", "1"]], 9: [["1"], ["2"], ["3"], ["4"], ["1", "2"], ["2", "3"], ["5"], ["6"]], 12: [["1"], ["2"], ["3"], ["1", "2"], ["2", "3"], ["1", "2", "3"], ["6", "3"], ["4"], ["5", "2"]] };
 
 /* Profil: varsayılan öğrenilmiş teknikler (kroşe ve aparkat henüz yok) */
-export const LEARN_DEFAULT = ["1", "2", "b1", "b2", "slip", "islip", "roll", "pull", "parry", "block", "step", "back", "side", "pivot"];
+export const LEARN_DEFAULT = ["1", "2", "b1", "b2", "slip", "islip", "roll", "pull", "parry", "block", "step", "back", "side", "sr", "pivot"];
