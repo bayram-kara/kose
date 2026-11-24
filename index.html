@@ -159,12 +159,13 @@ details{background:var(--panel);border-radius:14px;padding:12px 16px;margin-bott
 #run.tv .rt .lbl span{display:none}#run.tv .rt .lbl b{font-size:clamp(15px,2.6vh,22px)}
 #run.tv .rt .x{width:38px;height:38px;font-size:18px}
 #run.tv .dots{position:absolute;top:0;left:0;right:0;z-index:7;padding:0;gap:2px}#run.tv .dots i{height:3px;border-radius:0}
-#run.tv .info{position:absolute;left:max(14px,env(safe-area-inset-left),3vw);top:clamp(46px,9vh,90px);z-index:4;max-width:40vw;text-shadow:0 2px 12px #000c}
+#run.tv .info{position:absolute;left:max(14px,env(safe-area-inset-left),3vw);bottom:clamp(96px,19vh,170px);z-index:4;max-width:40vw;text-shadow:0 2px 12px #000c}
 #run.tv .state{font-size:clamp(12px,2.2vh,18px);min-height:0}
 #run.tv .clock{font-size:clamp(44px,15vh,140px)}
 #run.tv .cnt{font-size:clamp(11px,2vh,16px);margin-top:4px}
-#run.tv .call{position:fixed;right:max(14px,env(safe-area-inset-right),3vw);top:clamp(46px,9vh,90px);justify-content:flex-end;z-index:4;max-width:46vw;margin:0;min-height:0}
-#run.tv .tok{font-size:clamp(22px,8vh,72px);padding:.6vh 2vh;box-shadow:0 8px 30px #0008}
+#run.tv .call{position:fixed;left:50%;transform:translateX(-50%);top:clamp(44px,7vh,80px);right:auto;justify-content:center;flex-wrap:nowrap;z-index:4;max-width:96vw;margin:0;min-height:0;gap:1vh;background:#000b;padding:1vh 1.4vh;border-radius:2vh;box-shadow:0 10px 40px #0009}
+#run.tv .call:empty{background:none;padding:0;box-shadow:none}
+#run.tv .tok{font-size:var(--tk,8vh);padding:.4vh 1.8vh;box-shadow:none;white-space:nowrap}
 #run.tv .tok small{font-size:clamp(9px,1.5vh,13px)}
 #run.tv .cap{position:fixed;left:max(14px,env(safe-area-inset-left),3vw);bottom:clamp(54px,11vh,96px);max-width:56vw;font-size:clamp(13px,2.6vh,22px);background:#0009;padding:6px 12px;border-radius:10px;z-index:4;min-height:0}
 #run.tv .cap span{display:none}
@@ -225,6 +226,8 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .camind[hidden],.pip[hidden],.react[hidden]{display:none!important}
 .camind span{background:#1d7a4ccc;color:#fff;font-weight:700;font-size:13px;padding:4px 10px;border-radius:999px}.camind span.bad{background:#c8102e}
 .camind.lost span{background:#5d6370}
+.alert{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:5;font:700 clamp(20px,4.5vh,40px) Oswald;color:#111;background:#ffcc33f0;padding:6px 18px;border-radius:12px;opacity:0;transition:opacity .15s;pointer-events:none;white-space:nowrap}.alert.on{opacity:1}
+#run.tv .alert{top:auto;left:max(14px,env(safe-area-inset-left),3vw);transform:none;bottom:calc(clamp(96px,19vh,170px) + clamp(80px,22vh,200px))}
 .react{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);z-index:5;font:600 clamp(22px,5vh,44px) Oswald;color:#fff;background:#2f6fd6e0;padding:6px 18px;border-radius:12px;opacity:0;transition:opacity .15s;pointer-events:none}.react.on{opacity:1}
 .camsum{background:var(--panel);border-radius:14px;padding:12px 14px;display:grid;gap:3px;font-size:14px;margin-top:8px}.camsum b{font-family:Oswald;font-size:17px}.camsum .warn{color:var(--red)}
 @media(prefers-reduced-motion:reduce){.tok,.cd{animation:none}}
@@ -374,7 +377,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
   <div class="rt"><div class="lbl"><span id="r-step"></span><b id="r-title"></b></div><button class="x" id="r-zoom" aria-label="Kadraj: yakın ya da geniş" style="width:auto;padding:0 12px;font-size:15px" hidden>Yakın</button><button class="x" id="r-tv" aria-label="TV modu" style="width:auto;padding:0 12px;font-size:15px">TV</button><button class="x" id="r-x" aria-label="Antrenmanı bitir">×</button></div>
   <div class="dots" id="r-dots"></div>
   <div class="rb" id="r-body">
-    <div class="rfig st3" id="h3"><canvas class="pip" id="r-pip" hidden></canvas><div class="camind" id="r-cam" hidden><span class="gl">Sol</span><span class="gr">Sağ</span></div><div class="react" id="r-react"></div><div class="hud"><div class="edge l" id="r-el"></div><div class="edge r" id="r-er"></div><div class="dhint" id="r-dh"></div></div></div>
+    <div class="rfig st3" id="h3"><canvas class="pip" id="r-pip" hidden></canvas><div class="camind" id="r-cam" hidden><span class="gl">Sol</span><span class="gr">Sağ</span></div><div class="react" id="r-react"></div><div class="alert" id="r-alert"></div><div class="hud"><div class="edge l" id="r-el"></div><div class="edge r" id="r-er"></div><div class="dhint" id="r-dh"></div></div></div>
     <div class="info">
       <div class="state" id="r-state"></div>
       <div id="r-big"><div class="clock" id="r-clock">0:00</div></div>

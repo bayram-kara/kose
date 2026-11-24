@@ -38,7 +38,7 @@ for (const id of ["h1", "h2", "h2c", "h3"]) {
 function chrome() { const demo = W3 && W3.mode === "demo"; document.querySelectorAll(".vbar,.hint3").forEach(e => e.classList.toggle("off", !demo)); document.querySelectorAll(".hint3").forEach(e => e.style.display = demo ? "" : "none"); }
 function stage(id, fn) { pend = [id, fn]; if (W3 && W3.ready) { W3.mount($(id)); try { fn(W3); } catch (e) { console.error(e); } chrome(); } }
 try {
-  W3 = new World(() => { document.querySelectorAll(".ld").forEach(e => e.remove()); $("ver").textContent = "v5.3 · 3B"; W3.setView(st.view); W3.setZoom(st.zoom); if (pend) stage(...pend); },
+  W3 = new World(() => { document.querySelectorAll(".ld").forEach(e => e.remove()); $("ver").textContent = "v5.4 · 3B"; W3.setView(st.view); W3.setZoom(st.zoom); if (pend) stage(...pend); },
     e => { console.error("3B", e); failed = true; $("ver").textContent = "v5 · 3B yok"; document.querySelectorAll(".ld").forEach(x => x.textContent = "3B görüntü bu cihazda açılamadı. Antrenör, sayaç ve komutlar yine çalışır."); });
 } catch (e) { failed = true; }
 
@@ -320,7 +320,7 @@ function launch(blocks, meta) {
 function dotIdx() { let n = 0; R.b.slice(0, R.i + 1).forEach((x, i) => { if (x.ty !== "rest" && !(x.grp === "warm" && i > 0 && R.b[i - 1].grp === "warm")) n++; }); return n; }
 function dots() { const n = dotIdx(); [...$("r-dots").children].forEach((d, j) => d.className = j < n - 1 ? "d" : j === n - 1 ? "c" : ""); }
 const segT = () => R.acc + (R.run ? (performance.now() - R.run) / 1000 : 0);
-function showCall(str) { $("r-call").innerHTML = toks(str).map(t => tokHTML(t)).join(""); }
+function showCall(str) { const n = toks(str).length, el = $("r-call"); el.style.setProperty("--tk", n <= 3 ? "9vh" : n <= 5 ? "7.4vh" : "6vh"); el.innerHTML = toks(str).map(t => tokHTML(t)).join(""); if (R) R.lastCall = performance.now(); }
 function bigClock() { $("r-big").innerHTML = `<div class="clock" id="r-clock">${mm(R.b[R.i].dur)}</div>`; }
 function hint(txt, cls, ms) { const h = $("r-dh"); h.textContent = txt; h.className = "dhint on " + (cls || ""); clearTimeout(R.ht); R.ht = setTimeout(() => h.className = "dhint", ms || 900); }
 function edge(side) { const e = $(side === "l" ? "r-el" : "r-er"); e.classList.add("on"); setTimeout(() => e.classList.remove("on"), 380); }
@@ -506,6 +506,7 @@ function oppYourTurn(w, cfg, b) {
 /* --- ana döngü --- */
 function loop() {
   if (!R || R.i < 0 || R.i >= R.b.length || R.ph !== "work") return;
+  if (pendAlert) tryAlert();
   const b = R.b[R.i], t = segT(), rem = Math.max(0, b.dur - t), ck = $("r-clock");
   if (ck) ck.textContent = mm(Math.ceil(rem)); if (R.paused) return;
   if (b.ty === "round") {
@@ -607,14 +608,28 @@ function camEvent(type, d) {
   if (type === "seen") { $("r-cam").classList.toggle("lost", !d); return; }
   if (type === "drop" && live) {
     if (d.side === "L") R.cm.dropsL++; else R.cm.dropsR++; camInd();
-    if (st.cam.vDrop && now - lastSay[d.side] > 5000) { lastSay[d.side] = now; speak(d.side === "L" ? "Sol el yukarı!" : "Sağ el yukarı!", null, true); }
+    if (st.cam.vDrop && now - lastSay[d.side] > 5000) { lastSay[d.side] = now; alertSay(d.side === "L" ? "Sol el yukarı!" : "Sağ el yukarı!"); }
   }
   if (type === "dropEnd" && live) { if (d.side === "L") R.cm.dropMsL += d.dur; else R.cm.dropMsR += d.dur; camInd(); }
-  if (type === "flare" && live) { R.cm.flares = (R.cm.flares || 0) + 1; if (st.cam.vFlare && now - (lastSay.fl || 0) > 8000) { lastSay.fl = now; speak(d.side === "L" ? "Sol dirsek içeri!" : "Sağ dirsek içeri!", null, true); } }
-  if (type === "shrug" && live) { R.cm.shrugs++; if (st.cam.vShrug && now - lastSay.sh > 12000) { lastSay.sh = now; speak("Omuzlar aşağı, gevşe", null, true); } }
+  if (type === "flare" && live) { R.cm.flares = (R.cm.flares || 0) + 1; if (st.cam.vFlare && now - (lastSay.fl || 0) > 8000) { lastSay.fl = now; alertSay(d.side === "L" ? "Sol dirsek içeri!" : "Sağ dirsek içeri!"); } }
+  if (type === "shrug" && live) { R.cm.shrugs++; if (st.cam.vShrug && now - lastSay.sh > 12000) { lastSay.sh = now; alertSay("Omuzlar aşağı, gevşe"); } }
   if (type === "react" && live) { R.cm.reacts.push(d.ms); $("r-react").textContent = `Tepki ${d.ms} ms`; $("r-react").classList.add("on"); setTimeout(() => $("r-react").classList.remove("on"), 1400); }
   if (type === "noreact" && live) R.cm.misses++;
-  if (type === "edge" && live) { R.cm.edges = (R.cm.edges || 0) + 1; if (now - (lastSay.edge || 0) > 8000) { lastSay.edge = now; speak("Ortaya dön, kadrajda kal.", null, true); } }
+  if (type === "edge" && live) { R.cm.edges = (R.cm.edges || 0) + 1; if (now - (lastSay.edge || 0) > 8000) { lastSay.edge = now; alertSay("Ortaya dön, kadrajda kal."); } }
+}
+/* kamera uyarıları komutların üstüne konuşmasın: ekranda hemen görünür, ses sırası boşalınca söylenir */
+let pendAlert = null;
+function alertSay(text) {
+  const el = $("r-alert"); el.textContent = text; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 1600);
+  if (!st.voice) return; pendAlert = { text, at: performance.now() }; tryAlert();
+}
+function busySpeech() { try { return speechSynthesis.speaking || speechSynthesis.pending; } catch (e) { return false; } }
+function tryAlert() {
+  if (!pendAlert || !R) return; const now = performance.now();
+  if (now - pendAlert.at > 3000) { pendAlert = null; return; }
+  const t = segT(), soonCall = R.ph === "work" && R.nc - t < 1.3, justCalled = now - (R.lastCall || 0) < 1400;
+  if (busySpeech() || soonCall || justCalled) return;
+  const a = pendAlert; pendAlert = null; speak(a.text, null, true);
 }
 function camInd() { const c = $("r-cam"); c.querySelector(".gl").classList.toggle("bad", cam.state.dropL); c.querySelector(".gr").classList.toggle("bad", cam.state.dropR); }
 async function camStartRun() {
@@ -625,7 +640,7 @@ async function camStartRun() {
     R.cm.mvHist = [];
     R.camT = setInterval(() => { if (!R) return; const b = R.b[R.i]; if (b && b.ty === "round" && R.ph === "work" && !R.paused) { R.cm.frames++; if (cam.state.seen) { R.cm.seenF++; R.cm.monSec += 0.5; } camInd();
       const now = performance.now(), h = R.cm.mvHist; h.push([now, cam.moveAcc]); while (h.length && now - h[0][0] > 15000) h.shift();
-      if (cam.state.seen && segT() > 20 && h.length > 25 && h[h.length - 1][1] - h[0][1] < 0.8 && now - (lastSay.st || 0) > 20000) { lastSay.st = now; R.cm.statics = (R.cm.statics || 0) + 1; speak("Ayakların durdu, hareket et!", null, true); }
+      if (cam.state.seen && segT() > 20 && h.length > 25 && h[h.length - 1][1] - h[0][1] < 0.8 && now - (lastSay.st || 0) > 20000) { lastSay.st = now; R.cm.statics = (R.cm.statics || 0) + 1; alertSay("Ayakların durdu, hareket et!"); }
     } }, 500);
     R.cm.mv0 = cam.moveAcc;
     if (st.cam.calib && st.cam.calib.xL === undefined) setTimeout(() => R && ($("r-say").textContent = "Dirsek takibi için ayarlardan kalibrasyonu bir kez yenile."), 1500);

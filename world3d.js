@@ -359,7 +359,7 @@ export class World {
     } else {
       // birinci şahıs: karşında. Yakın = gövdeden yukarısı, Geniş = dizden yukarısı
       const wide = (this.zoom || {})[this.mode] === "wide", land = a > 1.2;
-      const far = wide ? (land ? 3.05 : 4.0) : (land ? 2.35 : 3.1), ty = wide ? (land ? 1.12 : 1.0) : (land ? 1.25 : 1.1), cy = wide ? 1.5 : 1.58;
+      const far = wide ? (land ? 3.05 : 4.0) : (land ? 2.35 : 3.1), ty = wide ? (land ? 1.22 : 1.0) : (land ? 1.36 : 1.1), cy = wide ? 1.5 : 1.58;
       c.position.set(this.mode === "spar" ? (wide ? 0.35 : 0.3) : 0, cy, far); t.set(0, ty, 0); c.lookAt(t); this.el.style.transform = "";
     }
   }
