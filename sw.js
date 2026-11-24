@@ -1,5 +1,5 @@
 /* Köşe servis çalışanı: uygulama kabuğu önden, geri kalanı ilk kullanımda önbelleğe */
-const V = "kose-v5.2";
+const V = "kose-v5.3";
 const SHELL = ["./", "./index.html", "./app.js", "./data.js", "./world3d.js", "./stats.js", "./cam.js", "./manifest.webmanifest",
   "./vendor/three/three.module.js", "./vendor/three/addons/loaders/GLTFLoader.js", "./vendor/three/addons/utils/BufferGeometryUtils.js",
   "./vendor/three/addons/utils/SkeletonUtils.js", "./vendor/three/addons/controls/OrbitControls.js", "./models/boxer.glb",

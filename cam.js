@@ -8,10 +8,17 @@ export class Cam {
     this.video = document.createElement("video"); this.video.playsInline = true; this.video.muted = true; this.video.autoplay = true;
     this.lm = null; this.stream = null; this.on = false; this.last = null; this.fps = 0; this._fc = 0; this._ft = performance.now();
     this.listeners = new Set(); this.overlays = new Set();
-    this.calib = null; this.state = { seen: false, dropL: false, dropR: false, shrug: false };
-    this._dropSince = { L: 0, R: 0 }; this._shrugSince = 0; this._watch = null; this._hist = [];
+    this.calib = null; this.state = { seen: false, dropL: false, dropR: false, shrug: false, flareL: false, flareR: false };
+    this._dropSince = { L: 0, R: 0 }; this._flareSince = { L: 0, R: 0 }; this._shrugSince = 0; this._watch = null; this._hist = [];
     this.moveAcc = 0; this._lastC = null; this._edgeSince = 0; this.state.edge = false;
-    this.thr = { drop: 0.6, dropHold: 700, shrug: 0.72, shrugHold: 1500, react: 0.28, reactMax: 1500 };
+    this.thr = { react: 0.28, reactMax: 1500 }; this.setSens("mid");
+  }
+  /* hassasiyet: düşük / orta / yüksek */
+  setSens(k) {
+    const S = { low: { drop: 0.55, dropHold: 700, shrug: 0.74, shrugHold: 1500, flare: 0.25, flareHold: 1400 },
+      mid: { drop: 0.36, dropHold: 500, shrug: 0.84, shrugHold: 1000, flare: 0.15, flareHold: 1000 },
+      high: { drop: 0.24, dropHold: 350, shrug: 0.9, shrugHold: 700, flare: 0.1, flareHold: 700 } }[k] || null;
+    if (S) Object.assign(this.thr, S); this.sens = k;
   }
   async devices() { try { const d = await navigator.mediaDevices.enumerateDevices(); return d.filter(x => x.kind === "videoinput"); } catch (e) { return []; } }
   async load() {
@@ -28,7 +35,7 @@ export class Cam {
     this.video.srcObject = this.stream; await this.video.play().catch(() => { });
     this.on = true; this._loop();
   }
-  stop() { this.on = false; try { this.stream && this.stream.getTracks().forEach(t => t.stop()); } catch (e) { } this.stream = null; this.state = { seen: false, dropL: false, dropR: false, shrug: false }; }
+  stop() { this.on = false; try { this.stream && this.stream.getTracks().forEach(t => t.stop()); } catch (e) { } this.stream = null; this.state = { seen: false, dropL: false, dropR: false, shrug: false, flareL: false, flareR: false }; }
   onEvent(f) { this.listeners.add(f); return () => this.listeners.delete(f); }
   emit(type, data) { for (const f of this.listeners) try { f(type, data); } catch (e) { } }
   /* overlay: { canvas, mirror } — iskeleti çizer */
@@ -65,6 +72,9 @@ export class Cam {
       sw, t: now,
       dyL: vis(IDX.lWr) ? (P[IDX.lWr].y - nose.y) / sw : null, dyR: vis(IDX.rWr) ? (P[IDX.rWr].y - nose.y) / sw : null,
       eL: vis(IDX.lEar) ? (P[IDX.lSh].y - P[IDX.lEar].y) / sw : null, eR: vis(IDX.rEar) ? (P[IDX.rSh].y - P[IDX.rEar].y) / sw : null,
+      // dirsek dışa açılması: omuz hattına göre dışarı doğru yatay mesafe (+ = dışarı)
+      xL: vis(IDX.lEl) ? (P[IDX.lEl].x - P[IDX.lSh].x) * Math.sign(P[IDX.lSh].x - P[IDX.rSh].x) / sw : null,
+      xR: vis(IDX.rEl) ? (P[IDX.rEl].x - P[IDX.rSh].x) * Math.sign(P[IDX.rSh].x - P[IDX.lSh].x) / sw : null,
       hx: nose.x / sw, hy: nose.y / sw
     };
     this.m = m;
@@ -79,12 +89,19 @@ export class Cam {
     // baş geçmişi (tepki ölçümü için)
     this._hist.push({ t: now, x: nose.x, y: nose.y, sw }); while (this._hist.length && now - this._hist[0].t > 1500) this._hist.shift();
     // gard
-    if (this.swap) { const t = m.dyL; m.dyL = m.dyR; m.dyR = t; }
+    if (this.swap) { let t = m.dyL; m.dyL = m.dyR; m.dyR = t; t = m.xL; m.xL = m.xR; m.xR = t; }
     const base = this.calib || { dyL: 0.35, dyR: 0.35, eL: null, eR: null };
     for (const [s, dy, b] of [["L", m.dyL, base.dyL], ["R", m.dyR, base.dyR]]) {
       const down = dy != null && dy > b + this.thr.drop, key = "drop" + s;
       if (down) { if (!this._dropSince[s]) this._dropSince[s] = now; if (!this.state[key] && now - this._dropSince[s] >= this.thr.dropHold) { this.state[key] = true; this.emit("drop", { side: s, t: now }); } }
       else { if (this.state[key]) { this.state[key] = false; this.emit("dropEnd", { side: s, dur: now - this._dropSince[s] }); } this._dropSince[s] = 0; }
+    }
+    // dirsek açılması: sadece el yüze yakınken (gardda) bakılır, yumruk ve kroşe anları sayılmaz
+    for (const [s, x, dy, bx, bdy] of [["L", m.xL, m.dyL, base.xL, base.dyL], ["R", m.xR, m.dyR, base.xR, base.dyR]]) {
+      const inGuard = dy != null && dy < (bdy == null ? 0.35 : bdy) + this.thr.drop * 0.8, key = "flare" + s;
+      const out = bx != null && inGuard && x != null && x > bx + this.thr.flare;
+      if (out) { if (!this._flareSince[s]) this._flareSince[s] = now; if (!this.state[key] && now - this._flareSince[s] >= this.thr.flareHold) { this.state[key] = true; this.emit("flare", { side: s, t: now }); } }
+      else { if (this.state[key]) { this.state[key] = false; this.emit("flareEnd", { side: s }); } this._flareSince[s] = 0; }
     }
     // omuz (kalibrasyon gerekir)
     if (this.calib && this.calib.e != null) {
@@ -111,7 +128,7 @@ export class Cam {
     const g = k => med(c.map(m => m[k]).filter(x => x != null));
     if (c.length < 10 || g("dyL") == null || g("dyR") == null) return null;
     const eL = g("eL"), eR = g("eR"), e = [eL, eR].filter(x => x != null);
-    this.calib = { dyL: g("dyL"), dyR: g("dyR"), e: e.length ? Math.min(...e) : null, n: c.length, at: Date.now() };
+    this.calib = { dyL: g("dyL"), dyR: g("dyR"), xL: g("xL"), xR: g("xR"), e: e.length ? Math.min(...e) : null, n: c.length, at: Date.now() };
     return this.calib;
   }
   _draw(P) {
@@ -127,6 +144,7 @@ export class Cam {
       x.lineWidth = 4; x.lineCap = "round";
       for (const [a, b] of EDGES) { if (P[a].v < 0.45 || P[b].v < 0.45) continue; const A = pt(P[a]), B = pt(P[b]); x.strokeStyle = "rgba(255,255,255,.85)"; x.beginPath(); x.moveTo(...A); x.lineTo(...B); x.stroke(); }
       for (const [i, s] of (this.swap ? [[IDX.lWr, "R"], [IDX.rWr, "L"]] : [[IDX.lWr, "L"], [IDX.rWr, "R"]])) { if (P[i].v < 0.45) continue; const A = pt(P[i]); x.fillStyle = this.state["drop" + s] ? "#ff3b4e" : "#3ad07a"; x.beginPath(); x.arc(A[0], A[1], 11, 0, Math.PI * 2); x.fill(); x.strokeStyle = "#fff"; x.lineWidth = 3; x.stroke(); }
+      for (const [i, s] of (this.swap ? [[IDX.lEl, "R"], [IDX.rEl, "L"]] : [[IDX.lEl, "L"], [IDX.rEl, "R"]])) { if (P[i].v < 0.45) continue; const A = pt(P[i]); x.fillStyle = this.state["flare" + s] ? "#ffb020" : "rgba(255,255,255,.9)"; x.beginPath(); x.arc(A[0], A[1], 8, 0, Math.PI * 2); x.fill(); }
       if (P[IDX.nose].v > 0.45) { const A = pt(P[IDX.nose]); x.fillStyle = "#fff"; x.beginPath(); x.arc(A[0], A[1], 6, 0, Math.PI * 2); x.fill(); }
       // gard çizgisi
       if (P[IDX.nose].v > 0.45 && P[IDX.lSh].v > 0.45 && P[IDX.rSh].v > 0.45) {

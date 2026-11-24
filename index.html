@@ -324,6 +324,8 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
   <div class="fld"><label for="c-dev">Kamera</label><select id="c-dev" style="width:100%"></select></div>
   <div class="tg"><span>Sesli gard uyarısı<small>Elin uzun süre düşük kalınca "sol el yukarı" der.</small></span><button class="sw" role="switch" id="c-vd" aria-label="Sesli gard uyarısı"></button></div>
   <div class="tg"><span>Omuz uyarısı<small>Omzunu uzun süre kasarsan "omuzlar aşağı" der. Kalibrasyon gerekir.</small></span><button class="sw" role="switch" id="c-vs" aria-label="Omuz uyarısı"></button></div>
+  <div class="tg"><span>Dirsek uyarısı<small>Gardda dirseğin dışarı açılırsa "dirsek içeri" der.</small></span><button class="sw" role="switch" id="c-vf" aria-label="Dirsek uyarısı"></button></div>
+  <div class="fld"><span class="lb">Hassasiyet</span><div class="seg" id="c-sens"></div><div class="hlp">Yüksek: küçük hatalarda da uyarır, ara sıra yanlış alarm verebilir. Düşük: sadece belirgin hatalarda.</div></div>
   <div class="tg"><span>Antrenmanda kamera görüntüsünü göster<small>Köşede küçük bir pencerede iskeletini görürsün.</small></span><button class="sw" role="switch" id="c-pip" aria-label="Kamera görüntüsünü göster"></button></div>
   <button class="btn" id="c-test" style="margin-top:10px">Kamera testi ve kalibrasyon</button>
 </div></div>
@@ -333,7 +335,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
   <div class="row" style="justify-content:space-between"><h2 id="ct-t">Kamera testi</h2><button class="x" id="ct-x" aria-label="Kapat" style="background:var(--panel)">×</button></div>
   <p class="hlp" id="ct-st" style="margin:0 0 10px"></p>
   <div class="ctv"><canvas id="ct-cv"></canvas><div class="ctflash" id="ct-flash"></div></div>
-  <div class="inds"><span class="ind" id="ct-l">Sol el <i></i></span><span class="ind" id="ct-r">Sağ el <i></i></span><span class="ind" id="ct-s">Omuz <i></i></span></div>
+  <div class="inds"><span class="ind" id="ct-l">Sol el <i></i></span><span class="ind" id="ct-r">Sağ el <i></i></span><span class="ind" id="ct-e">Dirsek <i></i></span><span class="ind" id="ct-s">Omuz <i></i></span></div>
   <div class="tg"><span>Sol ve sağı ters çevir<small>Sol elini indirdiğinde "Sağ el" yanıyorsa aç.</small></span><button class="sw" role="switch" id="ct-swap" aria-label="Sol ve sağı ters çevir"></button></div>
   <p class="hlp">Kırmızı kesikli çizgi gard sınırı: bileğin bu çizginin altında 0,7 saniyeden uzun kalırsa "gard düştü" sayılır. Yumruk atarken kısa süreli inişler sayılmaz.</p>
   <div class="row"><button class="btn" id="ct-calb">Kalibre et (gardında 3 sn dur)</button><button class="btn g" id="ct-react">Tepki testi</button><span class="hlp" id="ct-cal"></span></div>

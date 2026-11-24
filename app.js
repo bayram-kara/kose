@@ -16,11 +16,12 @@ const tokCls = t => M[t].d ? " d" : M[t].f ? " f" : "";
 const tokHTML = (t, cls = "tok") => `<span class="${cls}${tokCls(t)}">${lab(t)}${M[t].num || M[t].lab ? `<small>${M[t].n}</small>` : ""}</span>`;
 
 /* ================= KAYIT ================= */
-let st = { cam: { on: false, dev: "", vDrop: true, vShrug: true, pip: true, calib: null }, prof: { name: "", learned: LEARN_DEFAULT.slice(), only: true }, voiceName: "", rate: 1.05, vol: 1, sfx: 0.9, zoom: { pads: "near", spar: "wide" }, done: {}, pace: 1, voice: true, log: [], modes: null, combos: [], lastMode: "m1", lastWarm: "std", shFlag: false, view: "diag", tv: false };
+let st = { cam: { on: false, dev: "", vDrop: true, vShrug: true, vFlare: true, pip: true, calib: null, sens: "mid" }, prof: { name: "", learned: LEARN_DEFAULT.slice(), only: true }, voiceName: "", rate: 1.05, vol: 1, sfx: 0.9, zoom: { pads: "near", spar: "wide" }, done: {}, pace: 1, voice: true, log: [], modes: null, combos: [], lastMode: "m1", lastWarm: "std", shFlag: false, view: "diag", tv: false };
 try { const j = JSON.parse(localStorage.getItem("kose-v4") || localStorage.getItem("kose-v3") || "null"); if (j) st = Object.assign(st, j); } catch (e) { }
 if (!Array.isArray(st.modes) || !st.modes.length) st.modes = JSON.parse(JSON.stringify(SEED));
 if (!st.zoom || typeof st.zoom !== "object") st.zoom = { pads: "near", spar: "wide" };
-if (!st.cam || typeof st.cam !== "object") st.cam = { on: false, dev: "", vDrop: true, vShrug: true, pip: true, calib: null };
+if (!st.cam || typeof st.cam !== "object") st.cam = { on: false, dev: "", vDrop: true, vShrug: true, vFlare: true, pip: true, calib: null, sens: "mid" };
+if (st.cam.vFlare == null) st.cam.vFlare = true; if (!st.cam.sens) st.cam.sens = "mid";
 if (!st.prof || !Array.isArray(st.prof.learned)) st.prof = { name: "", learned: LEARN_DEFAULT.slice(), only: true };
 if (!Array.isArray(st.log)) st.log = [];
 st.modes.forEach(m => { if (m.guide == null) m.guide = true; if (!m.move) m.move = "mid"; if (m.themes === undefined) m.themes = null; }); if (!Array.isArray(st.combos)) st.combos = [];
@@ -37,7 +38,7 @@ for (const id of ["h1", "h2", "h2c", "h3"]) {
 function chrome() { const demo = W3 && W3.mode === "demo"; document.querySelectorAll(".vbar,.hint3").forEach(e => e.classList.toggle("off", !demo)); document.querySelectorAll(".hint3").forEach(e => e.style.display = demo ? "" : "none"); }
 function stage(id, fn) { pend = [id, fn]; if (W3 && W3.ready) { W3.mount($(id)); try { fn(W3); } catch (e) { console.error(e); } chrome(); } }
 try {
-  W3 = new World(() => { document.querySelectorAll(".ld").forEach(e => e.remove()); $("ver").textContent = "v5 · 3B"; W3.setView(st.view); W3.setZoom(st.zoom); if (pend) stage(...pend); },
+  W3 = new World(() => { document.querySelectorAll(".ld").forEach(e => e.remove()); $("ver").textContent = "v5.3 · 3B"; W3.setView(st.view); W3.setZoom(st.zoom); if (pend) stage(...pend); },
     e => { console.error("3B", e); failed = true; $("ver").textContent = "v5 · 3B yok"; document.querySelectorAll(".ld").forEach(x => x.textContent = "3B görüntü bu cihazda açılamadı. Antrenör, sayaç ve komutlar yine çalışır."); });
 } catch (e) { failed = true; }
 
@@ -183,7 +184,7 @@ function edFlow() {
 }
 function edKind() { edFlow(); $("ed-kindd").textContent = KINDS[ed.kind].d; $("ed-sparf").hidden = !(ed.kind === "spar" || ed.kind === "mix"); }
 function edMine() { $("ed-mined").textContent = st.combos.length ? `${st.combos.length} kayıtlı kombinasyonun var.` : "Henüz kayıtlı kombinasyonun yok. Kombinasyonlar sekmesinden ekleyebilirsin."; }
-function edSum() { const w = ed.warm === "ask" ? 0 : warmDur(ed.warm), t = ed.rounds * ed.len + (ed.rounds - 1) * ed.rest + w; $("ed-sum").textContent = `Toplam yaklaşık ${Math.round(t / 60)} dakika${ed.warm === "ask" ? " + seçeceğin ısınma" : ""}.`; }
+function edSum() { if (!ed || !$("ed-sum")) return; const w = ed.warm === "ask" ? 0 : warmDur(ed.warm), t = ed.rounds * ed.len + (ed.rounds - 1) * ed.rest + w; $("ed-sum").textContent = `Toplam yaklaşık ${Math.round(t / 60)} dakika${ed.warm === "ask" ? " + seçeceğin ısınma" : ""}.`; }
 function edCommit() { ed.name = (ed.name || "").trim() || "Modum"; const i = st.modes.findIndex(m => m.id === ed.id); if (i >= 0) st.modes[i] = ed; else st.modes.push(ed); st.lastMode = ed.id; save(); $("ed").hidden = true; }
 $("ed-x").onclick = () => $("ed").hidden = true;
 $("ed-save").onclick = () => { edCommit(); renderFree(); };
@@ -554,7 +555,7 @@ function finish(partial) {
   endRec = { v: 5, t: rec.t0, type: meta.type, title: meta.title, key: meta.key || null, kind: meta.kind || null, warm: meta.warm || null, warmName: meta.warm && WP[meta.warm] ? WP[meta.warm].n : null,
     planned: rec.planned, active: Math.round(rec.active), roundSec: Math.round(rec.roundSec), rounds: rec.rounds, rd: rec.rounds.filter(r => r.act >= r.dur * 0.9).length, rdPlan: R.b.filter(x => x.ty === "round").length,
     hits: R.hits, combos: R.combos, atks: R.atks, ctrs: R.ctrs, skipped: rec.skipped, pauses: rec.pauses, shAt: rec.shAt, cu: rec.cu, partial: !!partial,
-    cam: R.cm.on ? { move: R.cm.monSec > 20 ? +((cam.moveAcc - (R.cm.mv0 || 0)) / (R.cm.monSec / 60)).toFixed(1) : null, statics: R.cm.statics || 0, edges: R.cm.edges || 0, seen: R.cm.frames ? Math.round(R.cm.seenF / R.cm.frames * 100) : 0, dropsL: R.cm.dropsL, dropsR: R.cm.dropsR, dropSecL: Math.round(R.cm.dropMsL / 1000), dropSecR: Math.round(R.cm.dropMsR / 1000), shrugs: R.cm.shrugs, reacts: R.cm.reacts, misses: R.cm.misses, monSec: Math.round(R.cm.monSec) } : null };
+    cam: R.cm.on ? { flares: R.cm.flares || 0, move: R.cm.monSec > 20 ? +((cam.moveAcc - (R.cm.mv0 || 0)) / (R.cm.monSec / 60)).toFixed(1) : null, statics: R.cm.statics || 0, edges: R.cm.edges || 0, seen: R.cm.frames ? Math.round(R.cm.seenF / R.cm.frames * 100) : 0, dropsL: R.cm.dropsL, dropsR: R.cm.dropsR, dropSecL: Math.round(R.cm.dropMsL / 1000), dropSecR: Math.round(R.cm.dropMsR / 1000), shrugs: R.cm.shrugs, reacts: R.cm.reacts, misses: R.cm.misses, monSec: Math.round(R.cm.monSec) } : null };
   stop(); if (!partial) speak("Bitti. " + (st.prof.name ? "Harika iş çıkardın " + st.prof.name + "." : "Harika iş çıkardın."));
   const sum = [Math.round(endRec.active / 60) + " dakika", warm ? "" : endRec.rd + "/" + endRec.rdPlan + " raund", endRec.hits ? endRec.hits + " lapa" : "", endRec.atks ? endRec.atks + " saldırı karşılandı" : ""].filter(Boolean).join(" · ");
   $("e-t").textContent = partial ? "Yarım kaldı" : "Bitti"; $("e-sub").textContent = meta.title + " · " + sum;
@@ -591,12 +592,12 @@ $("r-voice").onclick = () => { st.voice = !st.voice; save(); $("r-voice").textCo
 document.addEventListener("keydown", e => { if (!R) return; if (e.code === "Space") { e.preventDefault(); $("r-pause").click(); } if (e.key === "Escape" && !document.fullscreenElement) quit(); });
 
 /* ================= KAMERA ================= */
-const cam = new Cam();
+const cam = new Cam(); window.__kose = { cam };
 const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
 function camSummary(c) {
   const rd = avg(c.reacts || []), min = Math.max(1, c.monSec / 60);
   return `<div class="camsum"><b>Kamera</b><span>Gard düşmesi: sol ${c.dropsL}, sağ ${c.dropsR} (dakikada ${((c.dropsL + c.dropsR) / min).toFixed(1)})</span>` +
-    `<span>Omuz kalkması: ${c.shrugs}</span>` + (c.move != null ? `<span>Hareket: dakikada ${c.move} omuz genişliği · "ayakların durdu" uyarısı ${c.statics}</span>` : "") + (c.reacts && c.reacts.length ? `<span>Ortalama tepki: ${rd} ms (en hızlı ${Math.min(...c.reacts)} ms) · tepki yok: ${c.misses}</span>` : "") +
+    `<span>Omuz kalkması: ${c.shrugs} · dirsek açılması: ${c.flares || 0}</span>` + (c.move != null ? `<span>Hareket: dakikada ${c.move} omuz genişliği · "ayakların durdu" uyarısı ${c.statics}</span>` : "") + (c.reacts && c.reacts.length ? `<span>Ortalama tepki: ${rd} ms (en hızlı ${Math.min(...c.reacts)} ms) · tepki yok: ${c.misses}</span>` : "") +
     (c.seen < 80 ? `<span class="warn">Kamera seni sürenin sadece %${c.seen}'inde gördü; sonuçlar eksik olabilir.</span>` : "") + `</div>`;
 }
 let lastSay = { L: 0, R: 0, sh: 0 };
@@ -609,6 +610,7 @@ function camEvent(type, d) {
     if (st.cam.vDrop && now - lastSay[d.side] > 5000) { lastSay[d.side] = now; speak(d.side === "L" ? "Sol el yukarı!" : "Sağ el yukarı!", null, true); }
   }
   if (type === "dropEnd" && live) { if (d.side === "L") R.cm.dropMsL += d.dur; else R.cm.dropMsR += d.dur; camInd(); }
+  if (type === "flare" && live) { R.cm.flares = (R.cm.flares || 0) + 1; if (st.cam.vFlare && now - (lastSay.fl || 0) > 8000) { lastSay.fl = now; speak(d.side === "L" ? "Sol dirsek içeri!" : "Sağ dirsek içeri!", null, true); } }
   if (type === "shrug" && live) { R.cm.shrugs++; if (st.cam.vShrug && now - lastSay.sh > 12000) { lastSay.sh = now; speak("Omuzlar aşağı, gevşe", null, true); } }
   if (type === "react" && live) { R.cm.reacts.push(d.ms); $("r-react").textContent = `Tepki ${d.ms} ms`; $("r-react").classList.add("on"); setTimeout(() => $("r-react").classList.remove("on"), 1400); }
   if (type === "noreact" && live) R.cm.misses++;
@@ -617,7 +619,7 @@ function camEvent(type, d) {
 function camInd() { const c = $("r-cam"); c.querySelector(".gl").classList.toggle("bad", cam.state.dropL); c.querySelector(".gr").classList.toggle("bad", cam.state.dropR); }
 async function camStartRun() {
   try {
-    cam.calib = st.cam.calib; cam.swap = !!st.cam.swap; await cam.start(st.cam.dev); if (!R) { cam.stop(); return; }
+    cam.calib = st.cam.calib; cam.swap = !!st.cam.swap; cam.setSens(st.cam.sens); await cam.start(st.cam.dev); if (!R) { cam.stop(); return; }
     R.cm.on = true; const off = cam.onEvent(camEvent); const cv = $("r-pip"); const det = st.cam.pip ? cam.attach(cv) : () => { };
     $("r-cam").hidden = false; cv.hidden = !st.cam.pip; R.camOff = () => { off(); det(); $("r-cam").hidden = true; cv.hidden = true; };
     R.cm.mvHist = [];
@@ -626,6 +628,7 @@ async function camStartRun() {
       if (cam.state.seen && segT() > 20 && h.length > 25 && h[h.length - 1][1] - h[0][1] < 0.8 && now - (lastSay.st || 0) > 20000) { lastSay.st = now; R.cm.statics = (R.cm.statics || 0) + 1; speak("Ayakların durdu, hareket et!", null, true); }
     } }, 500);
     R.cm.mv0 = cam.moveAcc;
+    if (st.cam.calib && st.cam.calib.xL === undefined) setTimeout(() => R && ($("r-say").textContent = "Dirsek takibi için ayarlardan kalibrasyonu bir kez yenile."), 1500);
     if (!st.cam.calib) setTimeout(() => R && speak("Kamera kalibre edilmemiş. Gard uyarıları varsayılan ayarla çalışacak; omuz takibi için ayarlardan kalibrasyon yap."), 1500);
   } catch (e) { console.error(e); if (R) { $("r-say").textContent = "Kamera açılamadı: " + (e.name === "NotAllowedError" ? "izin verilmedi" : e.message || e.name); } }
 }
@@ -634,12 +637,13 @@ let camtOff = null, camtTm = null;
 async function openCamTest() {
   $("camt").hidden = false; $("ct-st").textContent = "Kamera açılıyor…"; $("ct-res").textContent = "";
   try { await cam.start(st.cam.dev); } catch (e) { $("ct-st").textContent = "Kamera açılamadı: " + (e.name === "NotAllowedError" ? "tarayıcı izin vermedi. Adres çubuğundaki kamera simgesinden izin ver." : e.message || e.name); return; }
-  cam.calib = st.cam.calib; cam.swap = !!st.cam.swap; $("ct-swap").setAttribute("aria-checked", !!st.cam.swap); const det = cam.attach($("ct-cv")); const off = cam.onEvent((t, d) => { if (t === "react") $("ct-res").textContent = `Tepki süren: ${d.ms} ms`; if (t === "noreact") $("ct-res").textContent = "Hareket algılanmadı. Başını slip yapar gibi belirgin oynat."; });
+  cam.calib = st.cam.calib; cam.swap = !!st.cam.swap; cam.setSens(st.cam.sens); $("ct-swap").setAttribute("aria-checked", !!st.cam.swap); const det = cam.attach($("ct-cv")); const off = cam.onEvent((t, d) => { if (t === "react") $("ct-res").textContent = `Tepki süren: ${d.ms} ms`; if (t === "noreact") $("ct-res").textContent = "Hareket algılanmadı. Başını slip yapar gibi belirgin oynat."; });
   camtOff = () => { det(); off(); clearInterval(camtTm); };
   camtTm = setInterval(() => {
     const s = cam.state, m = cam.m;
     $("ct-st").textContent = s.seen ? `Seni görüyorum · ${cam.fps} kare/sn` : "Kadrajda değilsin: belden yukarın ve başın görünsün, 2–3 metre uzakta dur.";
     $("ct-l").className = "ind " + (s.seen ? (s.dropL ? "bad" : "ok") : ""); $("ct-r").className = "ind " + (s.seen ? (s.dropR ? "bad" : "ok") : "");
+    $("ct-e").className = "ind " + (s.seen ? (s.flareL || s.flareR ? "bad" : "ok") : ""); $("ct-e").querySelector("i").textContent = s.flareL && s.flareR ? "ikisi de açık" : s.flareL ? "sol açık" : s.flareR ? "sağ açık" : "içeride";
     $("ct-s").className = "ind " + (s.seen && cam.calib && cam.calib.e != null ? (s.shrug ? "bad" : "ok") : "");
     $("ct-s").querySelector("i").textContent = cam.calib && cam.calib.e != null ? (s.shrug ? "kalkık" : "gevşek") : "kalibrasyon gerekli";
     $("ct-l").querySelector("i").textContent = s.dropL ? "düştü" : "yukarıda"; $("ct-r").querySelector("i").textContent = s.dropR ? "düştü" : "yukarıda";
@@ -674,7 +678,8 @@ function openSet() {
   rng("v-rate", "rate", v => v.toFixed(2) + "×"); rng("v-vol", "vol", v => Math.round(v * 100) + "%"); rng("v-sfx", "sfx", v => Math.round(v * 100) + "%");
   pickV(); drawVoices();
   const csw = (id, k) => { const el = $(id); el.setAttribute("aria-checked", !!st.cam[k]); el.onclick = () => { st.cam[k] = !st.cam[k]; el.setAttribute("aria-checked", st.cam[k]); save(); }; };
-  csw("c-on", "on"); csw("c-vd", "vDrop"); csw("c-vs", "vShrug"); csw("c-pip", "pip");
+  csw("c-on", "on"); csw("c-vd", "vDrop"); csw("c-vs", "vShrug"); csw("c-vf", "vFlare"); csw("c-pip", "pip");
+  segUI($("c-sens"), [["low", "Düşük"], ["mid", "Orta"], ["high", "Yüksek"]], st.cam.sens, v => { st.cam.sens = v; cam.setSens(v); save(); });
   cam.devices().then(ds => { const sel = $("c-dev"); sel.innerHTML = `<option value="">Varsayılan kamera</option>` + ds.map((d, i) => `<option value="${esc(d.deviceId)}"${d.deviceId === st.cam.dev ? " selected" : ""}>${esc(d.label || "Kamera " + (i + 1))}</option>`).join(""); sel.onchange = () => { st.cam.dev = sel.value; save(); }; });
   $("c-test").onclick = () => { openCamTest(); };
   $("set").hidden = false;
